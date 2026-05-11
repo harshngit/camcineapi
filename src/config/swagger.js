@@ -14,7 +14,10 @@ const options = {
     },
     servers: [
       { url: 'http://localhost:3000/api/v1', description: 'Development Server' },
-      { url: 'https://camcineapi-production.up.railway.app/api/v1', description: 'Production Server' },
+      { 
+    url: 'https://camcine-api-604298774917.asia-south1.run.app/api/v1', 
+    description: 'Production Server (GCP)' 
+  },
     ],
     components: {
       securitySchemes: {
