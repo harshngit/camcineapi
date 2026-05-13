@@ -6,6 +6,7 @@ const swaggerSpec = require('./config/swagger');
 const contentRoutes = require('./routes/contentRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const viewTrackingRoutes = require('./routes/viewTrackingRoutes');
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/content', contentRoutes);
+app.use('/api/v1/views', viewTrackingRoutes);
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

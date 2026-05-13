@@ -7,7 +7,8 @@ async function initDb() {
     '../../db/schema.sql',
     '../../db/content_schema.sql',
     '../../db/actor_schema.sql',
-    '../../db/storage_cast_schema.sql'
+    '../../db/storage_cast_schema.sql',
+    '../../db/view_tracking_schema.sql'
   ];
 
   try {
