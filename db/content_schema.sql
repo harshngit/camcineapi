@@ -1,7 +1,7 @@
 -- ============================================================
 -- CAMCINE OTT — Content Module Schema
 -- Table: content, episodes, songs_metadata
--- Run after users table already exists
+-- PREREQUISITES: Run schema.sql first
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -94,10 +94,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_content_updated_at ON content;
 CREATE TRIGGER trigger_content_updated_at
     BEFORE UPDATE ON content
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS trigger_episodes_updated_at ON episodes;
 CREATE TRIGGER trigger_episodes_updated_at
     BEFORE UPDATE ON episodes
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

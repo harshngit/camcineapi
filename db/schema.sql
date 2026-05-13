@@ -31,3 +31,17 @@ CREATE INDEX IF NOT EXISTS idx_users_email        ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_phone        ON users(phone_number);
 CREATE INDEX IF NOT EXISTS idx_users_role         ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_is_active    ON users(is_active);
+
+-- ── AUTO-UPDATE updated_at TRIGGER ───────────────────────────
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_users_updated_at ON users;
+CREATE TRIGGER trigger_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

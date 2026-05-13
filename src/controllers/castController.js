@@ -23,6 +23,7 @@ const getContentCast = async (req, res) => {
         cc.role_type,
         cc.billing_order,
         cc.headshot_url,
+        cc.cast_image,
         cc.created_at,
         -- Pull live actor details if actor is on platform
         a.name            AS actor_platform_name,
@@ -58,6 +59,7 @@ const addContentCast = async (req, res) => {
     role_type,
     billing_order,
     headshot_url,
+    cast_image,
   } = req.body;
 
   // Must provide either actor_id or actor_name
@@ -84,13 +86,14 @@ const addContentCast = async (req, res) => {
     const result = await pool.query(`
       INSERT INTO content_cast (
         content_id, actor_id, actor_name, character_name,
-        role_type, billing_order, headshot_url
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7)
+        role_type, billing_order, headshot_url, cast_image
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
       ON CONFLICT (content_id, actor_id) DO UPDATE SET
         character_name = EXCLUDED.character_name,
         role_type      = EXCLUDED.role_type,
         billing_order  = EXCLUDED.billing_order,
-        headshot_url   = EXCLUDED.headshot_url
+        headshot_url   = EXCLUDED.headshot_url,
+        cast_image     = EXCLUDED.cast_image
       RETURNING *
     `, [
       req.params.id,
@@ -100,6 +103,7 @@ const addContentCast = async (req, res) => {
       role_type || 'supporting_actor',
       billing_order || 99,
       resolvedHeadshot,
+      cast_image || null,
     ]);
 
     return sendSuccess(res, { cast: result.rows[0] }, 'Cast member added.', 201);
@@ -114,17 +118,18 @@ const addContentCast = async (req, res) => {
 // Admin — Update a cast member's role or character
 // ─────────────────────────────────────────────────────────────
 const updateContentCast = async (req, res) => {
-  const { character_name, role_type, billing_order, headshot_url } = req.body;
+  const { character_name, role_type, billing_order, headshot_url, cast_image } = req.body;
   try {
     const result = await pool.query(`
       UPDATE content_cast SET
         character_name = COALESCE($1, character_name),
         role_type      = COALESCE($2, role_type),
         billing_order  = COALESCE($3, billing_order),
-        headshot_url   = COALESCE($4, headshot_url)
-      WHERE id = $5 AND content_id = $6
+        headshot_url   = COALESCE($4, headshot_url),
+        cast_image     = COALESCE($5, cast_image)
+      WHERE id = $6 AND content_id = $7
       RETURNING *
-    `, [character_name, role_type, billing_order, headshot_url, req.params.castId, req.params.id]);
+    `, [character_name, role_type, billing_order, headshot_url, cast_image, req.params.castId, req.params.id]);
 
     if (!result.rows.length) return sendError(res, 'Cast member not found.', 404);
     return sendSuccess(res, { cast: result.rows[0] }, 'Cast updated.');
@@ -181,12 +186,14 @@ const bulkAddCast = async (req, res) => {
       const result = await client.query(`
         INSERT INTO content_cast (
           content_id, actor_id, actor_name, character_name,
-          role_type, billing_order, headshot_url
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7)
+          role_type, billing_order, headshot_url, cast_image
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
         ON CONFLICT (content_id, actor_id) DO UPDATE SET
           character_name = EXCLUDED.character_name,
           role_type      = EXCLUDED.role_type,
-          billing_order  = EXCLUDED.billing_order
+          billing_order  = EXCLUDED.billing_order,
+          headshot_url   = EXCLUDED.headshot_url,
+          cast_image     = EXCLUDED.cast_image
         RETURNING *
       `, [
         req.params.id,
@@ -196,6 +203,7 @@ const bulkAddCast = async (req, res) => {
         member.role_type || 'supporting_actor',
         member.billing_order || 99,
         member.headshot_url || null,
+        member.cast_image || null,
       ]);
       inserted.push(result.rows[0]);
     }
@@ -230,6 +238,7 @@ const getEpisodeCast = async (req, res) => {
         ec.character_name,
         ec.role_type,
         ec.billing_order,
+        ec.cast_image,
         ec.created_at,
         a.screen_name        AS actor_screen_name,
         a.is_verified        AS actor_is_verified,
@@ -252,7 +261,7 @@ const getEpisodeCast = async (req, res) => {
 // Admin — Add guest cast for a specific episode
 // ─────────────────────────────────────────────────────────────
 const addEpisodeCast = async (req, res) => {
-  const { actor_id, actor_name, character_name, role_type, billing_order } = req.body;
+  const { actor_id, actor_name, character_name, role_type, billing_order, cast_image } = req.body;
 
   if (!actor_id && !actor_name) {
     return sendError(res, 'Either actor_id or actor_name is required.', 400);
@@ -262,11 +271,13 @@ const addEpisodeCast = async (req, res) => {
     const result = await pool.query(`
       INSERT INTO episode_cast (
         episode_id, content_id, actor_id, actor_name,
-        character_name, role_type, billing_order
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7)
+        character_name, role_type, billing_order, cast_image
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
       ON CONFLICT (episode_id, actor_id) DO UPDATE SET
         character_name = EXCLUDED.character_name,
-        role_type      = EXCLUDED.role_type
+        role_type      = EXCLUDED.role_type,
+        billing_order  = EXCLUDED.billing_order,
+        cast_image     = EXCLUDED.cast_image
       RETURNING *
     `, [
       req.params.episodeId,
@@ -276,6 +287,7 @@ const addEpisodeCast = async (req, res) => {
       character_name,
       role_type || 'guest',
       billing_order || 99,
+      cast_image || null,
     ]);
 
     return sendSuccess(res, { cast: result.rows[0] }, 'Episode cast member added.', 201);

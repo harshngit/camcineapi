@@ -1,6 +1,7 @@
 -- ============================================================
 -- CAMCINE OTT — Storage + Cast Module Schema
 -- Tables: media_uploads, content_cast, episode_cast
+-- PREREQUISITES: Run schema.sql, content_schema.sql, actor_schema.sql first
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -56,6 +57,7 @@ CREATE TABLE IF NOT EXISTS content_cast (
                         )),
     billing_order   INTEGER DEFAULT 99, -- 1 = top billed
     headshot_url    TEXT,               -- overrides actor.headshot_url if set
+    cast_image      TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(content_id, actor_id)
 );
@@ -79,6 +81,7 @@ CREATE TABLE IF NOT EXISTS episode_cast (
                             'guest','cameo','narrator'
                         )),
     billing_order   INTEGER DEFAULT 99,
+    cast_image      TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(episode_id, actor_id)
 );

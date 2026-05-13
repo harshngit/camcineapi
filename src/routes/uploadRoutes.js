@@ -475,6 +475,9 @@ router.get(
  *               headshot_url:
  *                 type: string
  *                 description: "Override actor's default headshot"
+ *               cast_image:
+ *                 type: string
+ *                 description: "Direct cast member image URL"
  *           examples:
  *             Platform Actor:
  *               summary: Link an actor already on Camcine
@@ -536,6 +539,7 @@ router.post(
  *                     role_type:      { type: string }
  *                     billing_order:  { type: integer }
  *                     headshot_url:   { type: string }
+ *                     cast_image:     { type: string }
  *           example:
  *             cast:
  *               - actor_name: "Aamir Khan"
@@ -594,6 +598,7 @@ router.post(
  *               role_type:      { type: string }
  *               billing_order:  { type: integer }
  *               headshot_url:   { type: string }
+ *               cast_image:     { type: string }
  *     responses:
  *       200:
  *         description: Cast updated
@@ -700,6 +705,7 @@ router.get(
  *               character_name: { type: string, example: "Kaleen Bhaiya" }
  *               role_type:      { type: string, enum: [lead_actor, lead_actress, supporting_actor, supporting_actress, guest, cameo, narrator] }
  *               billing_order:  { type: integer }
+ *               cast_image:     { type: string }
  *     responses:
  *       201:
  *         description: Episode cast member added
