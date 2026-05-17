@@ -30,7 +30,7 @@ const updateEpisodeUrl = async (episodeId, field, url) => {
 // Upload poster, thumbnail, cover image, actor headshot
 // Field: file (single)
 // ─────────────────────────────────────────────────────────────
-const uploadImage = async (req, res) => {
+const uploadImage = async (req, res, next) => {
   try {
     if (!req.file) return sendError(res, 'No file provided.', 400);
 
@@ -95,52 +95,62 @@ const uploadImage = async (req, res) => {
       mime_type:  req.file.mimetype,
     }, 'Image uploaded successfully.', 201);
   } catch (err) {
-    console.error('uploadImage error:', err);
-    return sendError(res, 'Image upload failed: ' + err.message, 500);
+    next(err);
   }
 };
 
 // ─────────────────────────────────────────────────────────────
 // 2. POST /upload/video
-// Upload full movie/episode video
+// Upload movie/episode video, trailer, or song video
 // Field: file (single)
 // ─────────────────────────────────────────────────────────────
-const uploadVideo = async (req, res) => {
+const uploadVideo = async (req, res, next) => {
   try {
     if (!req.file) return sendError(res, 'No file provided.', 400);
 
     const {
-      linked_to_id,    // content_id or episode_id
-      linked_to_type,  // 'content' | 'episode'
-      auto_update,     // 'true' = auto-update stream_url_hls field
+      linked_to_id,        // UUID of content/episode
+      linked_to_type,      // 'content' | 'episode'
+      video_purpose,       // 'main_video' | 'trailer' | 'song_video'
+      auto_update,         // 'true' = auto-update DB field
     } = req.body;
 
+    // Upload to GCS
     const { uniqueName, gcsPath, publicUrl } = await uploadToGCS({
       fileBuffer:   req.file.buffer,
       originalName: req.file.originalname,
       mimeType:     req.file.mimetype,
       fileType:     'video',
-      folder:       'videos',
+      folder:       `videos/${video_purpose || 'general'}`,
     });
 
+    // Save upload record to DB
     const upload = await saveUploadRecord({
-      uploadedBy:   req.user.id,
-      originalName: req.file.originalname,
+      uploadedBy:    req.user.id,
+      originalName:  req.file.originalname,
       uniqueName,
-      fileType:     'video',
-      mimeType:     req.file.mimetype,
-      fileSize:     req.file.size,
+      fileType:      'video',
+      mimeType:      req.file.mimetype,
+      fileSize:      req.file.size,
       gcsPath,
       publicUrl,
-      linkedToId:   linked_to_id,
-      linkedToType: linked_to_type,
-      metadata:     { processing_status: 'raw_uploaded' },
+      linkedToId:    linked_to_id,
+      linkedToType:  linked_to_type,
+      metadata:      { video_purpose },
     });
 
-    // Auto-update content/episode stream URL
+    // Auto-update content/episode with new URL
     if (auto_update === 'true' && linked_to_id && linked_to_type) {
-      if (linked_to_type === 'content') await updateContentUrl(linked_to_id, 'stream_url_hls', publicUrl);
-      if (linked_to_type === 'episode') await updateEpisodeUrl(linked_to_id, 'stream_url_hls', publicUrl);
+      const fieldMap = {
+        content: { main_video: 'video_url', trailer: 'trailer_url', song_video: 'video_url' },
+        episode: { main_video: 'video_url' },
+      };
+      const field = fieldMap[linked_to_type]?.[video_purpose];
+
+      if (field) {
+        if (linked_to_type === 'content') await updateContentUrl(linked_to_id, field, publicUrl);
+        if (linked_to_type === 'episode') await updateEpisodeUrl(linked_to_id, field, publicUrl);
+      }
     }
 
     return sendSuccess(res, {
@@ -150,50 +160,58 @@ const uploadVideo = async (req, res) => {
       gcs_path:   gcsPath,
       file_size:  req.file.size,
       mime_type:  req.file.mimetype,
-      note:       'Video uploaded. For HLS streaming, transcode via Cloud Transcoder or FFmpeg.',
     }, 'Video uploaded successfully.', 201);
   } catch (err) {
-    console.error('uploadVideo error:', err);
-    return sendError(res, 'Video upload failed: ' + err.message, 500);
+    next(err);
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// 3. POST /upload/trailer
-// Upload movie/show trailer
+// 3. POST /upload/audio
+// Upload high-quality audio for songs
 // Field: file (single)
 // ─────────────────────────────────────────────────────────────
-const uploadTrailer = async (req, res) => {
+const uploadAudio = async (req, res, next) => {
   try {
     if (!req.file) return sendError(res, 'No file provided.', 400);
 
-    const { linked_to_id, auto_update } = req.body;
+    const {
+      song_id,             // UUID of content where type = 'song'
+      audio_quality,       // 'hq' | 'lq'
+      auto_update,         // 'true' = auto-update DB field
+    } = req.body;
 
+    // Upload to GCS
     const { uniqueName, gcsPath, publicUrl } = await uploadToGCS({
       fileBuffer:   req.file.buffer,
       originalName: req.file.originalname,
       mimeType:     req.file.mimetype,
-      fileType:     'trailer',
-      folder:       'trailers',
+      fileType:     'audio',
+      folder:       `audio/${audio_quality || 'hq'}`,
     });
 
+    // Save upload record to DB
     const upload = await saveUploadRecord({
-      uploadedBy:   req.user.id,
-      originalName: req.file.originalname,
+      uploadedBy:    req.user.id,
+      originalName:  req.file.originalname,
       uniqueName,
-      fileType:     'trailer',
-      mimeType:     req.file.mimetype,
-      fileSize:     req.file.size,
+      fileType:      'audio',
+      mimeType:      req.file.mimetype,
+      fileSize:      req.file.size,
       gcsPath,
       publicUrl,
-      linkedToId:   linked_to_id,
-      linkedToType: 'content',
-      metadata:     {},
+      linkedToId:    song_id,
+      linkedToType:  'content',
+      metadata:      { audio_quality },
     });
 
-    // Auto-update content trailer_url
-    if (auto_update === 'true' && linked_to_id) {
-      await updateContentUrl(linked_to_id, 'trailer_url', publicUrl);
+    // Auto-update songs_metadata table
+    if (auto_update === 'true' && song_id) {
+      const field = audio_quality === 'lq' ? 'audio_url_lq' : 'audio_url_hq';
+      await pool.query(
+        `UPDATE songs_metadata SET ${field} = $1, updated_at = NOW() WHERE id = $2`,
+        [publicUrl, song_id]
+      );
     }
 
     return sendSuccess(res, {
@@ -202,107 +220,41 @@ const uploadTrailer = async (req, res) => {
       file_name:  uniqueName,
       gcs_path:   gcsPath,
       file_size:  req.file.size,
-    }, 'Trailer uploaded successfully.', 201);
+      mime_type:  req.file.mimetype,
+    }, 'Audio uploaded successfully.', 201);
   } catch (err) {
-    console.error('uploadTrailer error:', err);
-    return sendError(res, 'Trailer upload failed: ' + err.message, 500);
+    next(err);
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// 4. POST /upload/audio
-// Upload song audio (HQ 320kbps + LQ 128kbps)
-// Fields: audio_hq (required), audio_lq (optional)
+// 4. GET /upload/history
+// Admin only — View list of all recent uploads
 // ─────────────────────────────────────────────────────────────
-const uploadAudio = async (req, res) => {
+const getUploadHistory = async (req, res, next) => {
   try {
-    const hqFile = req.files?.audio_hq?.[0];
-    const lqFile = req.files?.audio_lq?.[0];
+    const { page = 1, limit = 20, type } = req.query;
+    const offset = (page - 1) * limit;
 
-    if (!hqFile) return sendError(res, 'audio_hq file is required.', 400);
-
-    const { linked_to_id, auto_update } = req.body;
-    const result = {};
-
-    // Upload HQ audio
-    const hq = await uploadToGCS({
-      fileBuffer:   hqFile.buffer,
-      originalName: hqFile.originalname,
-      mimeType:     hqFile.mimetype,
-      fileType:     'audio',
-      folder:       'audio/hq',
-    });
-
-    const hqRecord = await saveUploadRecord({
-      uploadedBy:   req.user.id,
-      originalName: hqFile.originalname,
-      uniqueName:   hq.uniqueName,
-      fileType:     'audio',
-      mimeType:     hqFile.mimetype,
-      fileSize:     hqFile.size,
-      gcsPath:      hq.gcsPath,
-      publicUrl:    hq.publicUrl,
-      linkedToId:   linked_to_id,
-      linkedToType: 'content',
-      metadata:     { quality: 'hq', bitrate: '320kbps' },
-    });
-
-    result.audio_hq = {
-      upload_id:  hqRecord.id,
-      public_url: hq.publicUrl,
-      file_name:  hq.uniqueName,
-    };
-
-    // Upload LQ audio if provided
-    if (lqFile) {
-      const lq = await uploadToGCS({
-        fileBuffer:   lqFile.buffer,
-        originalName: lqFile.originalname,
-        mimeType:     lqFile.mimetype,
-        fileType:     'audio',
-        folder:       'audio/lq',
-      });
-
-      const lqRecord = await saveUploadRecord({
-        uploadedBy:   req.user.id,
-        originalName: lqFile.originalname,
-        uniqueName:   lq.uniqueName,
-        fileType:     'audio',
-        mimeType:     lqFile.mimetype,
-        fileSize:     lqFile.size,
-        gcsPath:      lq.gcsPath,
-        publicUrl:    lq.publicUrl,
-        linkedToId:   linked_to_id,
-        linkedToType: 'content',
-        metadata:     { quality: 'lq', bitrate: '128kbps' },
-      });
-
-      result.audio_lq = {
-        upload_id:  lqRecord.id,
-        public_url: lq.publicUrl,
-        file_name:  lq.uniqueName,
-      };
-
-      // Auto-update songs_metadata
-      if (auto_update === 'true' && linked_to_id) {
-        await pool.query(
-          `UPDATE songs_metadata SET
-            audio_url_hq = $1, audio_url_lq = $2, updated_at = NOW()
-           WHERE id = $3`,
-          [hq.publicUrl, lq.publicUrl, linked_to_id]
-        );
-      }
-    } else if (auto_update === 'true' && linked_to_id) {
-      await pool.query(
-        `UPDATE songs_metadata SET audio_url_hq = $1, updated_at = NOW() WHERE id = $2`,
-        [hq.publicUrl, linked_to_id]
-      );
+    const params = [limit, offset];
+    let where = '';
+    if (type) {
+      params.push(type);
+      where = `WHERE file_type = $3`;
     }
 
-    return sendSuccess(res, result, 'Audio uploaded successfully.', 201);
+    const result = await pool.query(
+      `SELECT * FROM uploads ${where} ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+      params
+    );
+
+    return sendSuccess(res, {
+      uploads: result.rows,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
   } catch (err) {
-    console.error('uploadAudio error:', err);
-    return sendError(res, 'Audio upload failed: ' + err.message, 500);
+    next(err);
   }
 };
 

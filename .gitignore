@@ -2,3 +2,14 @@ node_modules/
 .env
 *.log
 dist/
+.vscode/
+.idea/
+
+# Secrets and Keys
+*.json
+!package.json
+!package-lock.json
+!composer.json
+camcine-ott-*.json
+camcine-key.json
+../camcine-key.json

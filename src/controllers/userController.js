@@ -2,7 +2,7 @@ const pool = require('../config/db');
 const { sendSuccess, sendError } = require('../utils/response');
 
 // ── Get All Users ─────────────────────────────────────────────────────────────
-const getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, role, search } = req.query;
     const offset = (page - 1) * limit;
@@ -35,13 +35,12 @@ const getAllUsers = async (req, res) => {
       pagination: { page: +page, limit: +limit, total, pages: Math.ceil(total / limit) },
     }, 'Users fetched successfully.');
   } catch (err) {
-    console.error('Get all users error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
 // ── Get User By ID ────────────────────────────────────────────────────────────
-const getUserById = async (req, res) => {
+const getUserById = async (req, res, next) => {
   const { id } = req.params;
   try {
     const result = await pool.query(
@@ -53,13 +52,12 @@ const getUserById = async (req, res) => {
     if (!result.rows.length) return sendError(res, 'User not found.', 404);
     return sendSuccess(res, { user: result.rows[0] }, 'User fetched successfully.');
   } catch (err) {
-    console.error('Get user by id error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
 // ── Update User ───────────────────────────────────────────────────────────────
-const updateUser = async (req, res) => {
+const updateUser = async (req, res, next) => {
   const { id } = req.params;
   const { first_name, last_name, phone_number, age, language_preferences, regions, role } = req.body;
 
@@ -94,13 +92,12 @@ const updateUser = async (req, res) => {
     if (!result.rows.length) return sendError(res, 'User not found.', 404);
     return sendSuccess(res, { user: result.rows[0] }, 'User updated successfully.');
   } catch (err) {
-    console.error('Update user error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
 // ── Delete User ───────────────────────────────────────────────────────────────
-const deleteUser = async (req, res) => {
+const deleteUser = async (req, res, next) => {
   const { id } = req.params;
   try {
     const result = await pool.query(
@@ -110,8 +107,7 @@ const deleteUser = async (req, res) => {
     if (!result.rows.length) return sendError(res, 'User not found.', 404);
     return sendSuccess(res, {}, 'User deactivated successfully.');
   } catch (err) {
-    console.error('Delete user error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 

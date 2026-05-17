@@ -4,12 +4,9 @@ const { generateToken } = require('../utils/jwt');
 const { sendSuccess, sendError } = require('../utils/response');
 
 // ── Register ──────────────────────────────────────────────────────────────────
-const register = async (req, res) => {
+const register = async (req, res, next) => {
   const { email, first_name, last_name, phone_number, password, role, age } = req.body;
   try {
-    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
-    if (existing.rows.length) return sendError(res, 'Email already registered.', 409);
-
     const hash = await bcrypt.hash(password, parseInt(process.env.BCRYPT_ROUNDS) || 10);
 
     const result = await pool.query(
@@ -24,13 +21,12 @@ const register = async (req, res) => {
 
     return sendSuccess(res, { user, token }, 'Registration successful.', 201);
   } catch (err) {
-    console.error('Register error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
 // ── Login ─────────────────────────────────────────────────────────────────────
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   const { id, email, phone_number, password } = req.body;
   try {
     let result;
@@ -59,8 +55,7 @@ const login = async (req, res) => {
 
     return sendSuccess(res, { user: safeUser, token }, 'Login successful.');
   } catch (err) {
-    console.error('Login error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
@@ -70,7 +65,7 @@ const authMe = async (req, res) => {
 };
 
 // ── Forgot Password ───────────────────────────────────────────────────────────
-const forgotPassword = async (req, res) => {
+const forgotPassword = async (req, res, next) => {
   const { email } = req.body;
   try {
     const result = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
@@ -89,36 +84,32 @@ const forgotPassword = async (req, res) => {
     // In production: send this token via email
     return sendSuccess(res, { reset_token: resetToken }, 'Password reset token generated. (Send via email in production)');
   } catch (err) {
-    console.error('Forgot password error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
 // ── Change / Reset Password ───────────────────────────────────────────────────
-const changePassword = async (req, res) => {
+const changePassword = async (req, res, next) => {
   const { reset_token, new_password } = req.body;
   try {
     const result = await pool.query(
-      `SELECT id FROM users
-       WHERE reset_password_token = $1 AND reset_password_expires > NOW()`,
+      'SELECT id FROM users WHERE reset_password_token = $1 AND reset_password_expires > NOW()',
       [reset_token]
     );
 
     if (!result.rows.length) return sendError(res, 'Invalid or expired reset token.', 400);
 
+    const user = result.rows[0];
     const hash = await bcrypt.hash(new_password, parseInt(process.env.BCRYPT_ROUNDS) || 10);
 
     await pool.query(
-      `UPDATE users
-       SET password_hash = $1, reset_password_token = NULL, reset_password_expires = NULL
-       WHERE id = $2`,
-      [hash, result.rows[0].id]
+      'UPDATE users SET password_hash = $1, reset_password_token = NULL, reset_password_expires = NULL WHERE id = $2',
+      [hash, user.id]
     );
 
     return sendSuccess(res, {}, 'Password changed successfully.');
   } catch (err) {
-    console.error('Change password error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 

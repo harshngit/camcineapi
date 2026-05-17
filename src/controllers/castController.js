@@ -11,7 +11,7 @@ const { sendSuccess, sendError } = require('../utils/response');
 // 1. GET /content/:id/cast
 // Public — Get full cast for a movie/show/song
 // ─────────────────────────────────────────────────────────────
-const getContentCast = async (req, res) => {
+const getContentCast = async (req, res, next) => {
   try {
     const result = await pool.query(`
       SELECT
@@ -42,8 +42,7 @@ const getContentCast = async (req, res) => {
       total:      result.rows.length,
     });
   } catch (err) {
-    console.error('getContentCast error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
@@ -51,7 +50,7 @@ const getContentCast = async (req, res) => {
 // 2. POST /content/:id/cast
 // Admin — Add a cast member to a movie/show/song
 // ─────────────────────────────────────────────────────────────
-const addContentCast = async (req, res) => {
+const addContentCast = async (req, res, next) => {
   const {
     actor_id,         // UUID — if actor exists on platform
     actor_name,       // string — if actor NOT on platform
@@ -108,8 +107,7 @@ const addContentCast = async (req, res) => {
 
     return sendSuccess(res, { cast: result.rows[0] }, 'Cast member added.', 201);
   } catch (err) {
-    console.error('addContentCast error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
@@ -117,7 +115,7 @@ const addContentCast = async (req, res) => {
 // 3. PUT /content/:id/cast/:castId
 // Admin — Update a cast member's role or character
 // ─────────────────────────────────────────────────────────────
-const updateContentCast = async (req, res) => {
+const updateContentCast = async (req, res, next) => {
   const { character_name, role_type, billing_order, headshot_url, cast_image } = req.body;
   try {
     const result = await pool.query(`
@@ -134,8 +132,7 @@ const updateContentCast = async (req, res) => {
     if (!result.rows.length) return sendError(res, 'Cast member not found.', 404);
     return sendSuccess(res, { cast: result.rows[0] }, 'Cast updated.');
   } catch (err) {
-    console.error('updateContentCast error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
@@ -143,7 +140,7 @@ const updateContentCast = async (req, res) => {
 // 4. DELETE /content/:id/cast/:castId
 // Admin — Remove a cast member from content
 // ─────────────────────────────────────────────────────────────
-const removeContentCast = async (req, res) => {
+const removeContentCast = async (req, res, next) => {
   try {
     const result = await pool.query(
       'DELETE FROM content_cast WHERE id = $1 AND content_id = $2 RETURNING id',
@@ -152,8 +149,7 @@ const removeContentCast = async (req, res) => {
     if (!result.rows.length) return sendError(res, 'Cast member not found.', 404);
     return sendSuccess(res, {}, 'Cast member removed.');
   } catch (err) {
-    console.error('removeContentCast error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 

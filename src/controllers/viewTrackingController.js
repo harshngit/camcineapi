@@ -9,7 +9,7 @@ const { sendSuccess, sendError } = require('../utils/response');
 const POINTS_PER_VIEW = 1;
 const MAX_DAILY_VIEW_POINTS = 3;
 
-const recordView = async (req, res) => {
+const recordView = async (req, res, next) => {
   const { user_id, content_id, episode_id, idempotency_key } = req.body;
   const clientIp = req.ip || req.connection.remoteAddress;
   const userAgent = req.get('user-agent') || 'unknown';
@@ -189,19 +189,13 @@ const recordView = async (req, res) => {
 
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('[VIEW_TRACKING] Error recording view:', err);
-
-    if (err.code === '23505') { // Unique violation (duplicate idempotency key)
-      return sendError(res, 'This view has already been processed.', 409);
-    }
-
-    return sendError(res, 'Failed to record view: ' + err.message, 500);
+    next(err);
   } finally {
     client.release();
   }
 };
 
-const getUserPoints = async (req, res) => {
+const getUserPoints = async (req, res, next) => {
   const { user_id } = req.params;
 
   if (!user_id) {
@@ -246,8 +240,7 @@ const getUserPoints = async (req, res) => {
       points_per_view: POINTS_PER_VIEW,
     });
   } catch (err) {
-    console.error('[VIEW_TRACKING] Error fetching user points:', err);
-    return sendError(res, 'Failed to fetch user points.', 500);
+    next(err);
   }
 };
 
