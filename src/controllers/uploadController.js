@@ -303,8 +303,7 @@ const uploadLyrics = async (req, res) => {
       file_name:  uniqueName,
     }, 'Lyrics file uploaded.', 201);
   } catch (err) {
-    console.error('uploadLyrics error:', err);
-    return sendError(res, 'Lyrics upload failed: ' + err.message, 500);
+    next(err);
   }
 };
 
@@ -312,7 +311,7 @@ const uploadLyrics = async (req, res) => {
 // 6. GET /upload/my-uploads
 // Get all uploads by the logged-in admin/user
 // ─────────────────────────────────────────────────────────────
-const getMyUploads = async (req, res) => {
+const getMyUploads = async (req, res, next) => {
   const { file_type, linked_to_id, page = 1, limit = 20 } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
   try {
@@ -344,8 +343,7 @@ const getMyUploads = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('getMyUploads error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
@@ -353,7 +351,7 @@ const getMyUploads = async (req, res) => {
 // 7. DELETE /upload/:id
 // Delete upload from GCS + DB
 // ─────────────────────────────────────────────────────────────
-const deleteUpload = async (req, res) => {
+const deleteUpload = async (req, res, next) => {
   try {
     const result = await pool.query(
       'SELECT * FROM media_uploads WHERE id = $1',
@@ -376,15 +374,13 @@ const deleteUpload = async (req, res) => {
 
     return sendSuccess(res, {}, 'Upload deleted successfully.');
   } catch (err) {
-    console.error('deleteUpload error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
 module.exports = {
   uploadImage,
   uploadVideo,
-  uploadTrailer,
   uploadAudio,
   uploadLyrics,
   getMyUploads,

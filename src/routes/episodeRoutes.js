@@ -20,12 +20,12 @@ const {
 } = require('../controllers/episodeController');
 const { authenticate, authorize } = require('../middleware/auth');
 const { createUploader, handleMulterError } = require('../middleware/uploadMiddleware');
-const { uploadImage, uploadVideo, uploadTrailer } = require('../controllers/uploadController');
+const { uploadImage, uploadVideo } = require('../controllers/uploadController');
 const validate = require('../middleware/validate');
 
 const imageUploader   = createUploader('image');
 const videoUploader   = createUploader('video');
-const trailerUploader = createUploader('trailer');
+const trailerUploader = createUploader('video');
 
 const seriesCreateRules = [
   body('series_name').notEmpty().trim().withMessage('series_name is required'),
@@ -499,11 +499,13 @@ router.post(
     trailerUploader.single('file')(req, res, (err) => handleMulterError(err, req, res, next));
   },
   (req, res, next) => {
-    req.body.linked_to_id = req.body.series_id;
-    req.body.auto_update  = 'true';
+    req.body.linked_to_id   = req.body.series_id;
+    req.body.linked_to_type = 'content';
+    req.body.video_purpose  = 'trailer';
+    req.body.auto_update    = 'true';
     next();
   },
-  uploadTrailer
+  uploadVideo
 );
 
 /**

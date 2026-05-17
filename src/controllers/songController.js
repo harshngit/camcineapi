@@ -406,7 +406,7 @@ const deleteSong = async (req, res, next) => {
 // ═══════════════════════════════════════════════════════════════
 
 // Upload HQ + optional LQ audio
-const uploadSongAudio = async (req, res) => {
+const uploadSongAudio = async (req, res, next) => {
   try {
     const hqFile = req.files?.audio_hq?.[0];
     const lqFile = req.files?.audio_lq?.[0];
@@ -461,13 +461,12 @@ const uploadSongAudio = async (req, res) => {
 
     return sendSuccess(res, result, 'Song audio uploaded and linked.', 201);
   } catch (err) {
-    console.error('uploadSongAudio error:', err);
-    return sendError(res, 'Audio upload failed: ' + err.message, 500);
+    next(err);
   }
 };
 
 // Upload lyrics file
-const uploadSongLyrics = async (req, res) => {
+const uploadSongLyrics = async (req, res, next) => {
   try {
     if (!req.file) return sendError(res, 'No lyrics file provided.', 400);
     const song_id = req.body.song_id;
@@ -494,13 +493,12 @@ const uploadSongLyrics = async (req, res) => {
     );
     return sendSuccess(res, { public_url: publicUrl, file_name: uniqueName }, 'Lyrics uploaded and linked.', 201);
   } catch (err) {
-    console.error('uploadSongLyrics error:', err);
-    return sendError(res, 'Lyrics upload failed: ' + err.message, 500);
+    next(err);
   }
 };
 
 // Upload song thumbnail/cover
-const uploadSongThumbnail = async (req, res) => {
+const uploadSongThumbnail = async (req, res, next) => {
   try {
     if (!req.file) return sendError(res, 'No image file provided.', 400);
     const song_id = req.body.song_id;
@@ -526,8 +524,7 @@ const uploadSongThumbnail = async (req, res) => {
     );
     return sendSuccess(res, { public_url: publicUrl }, 'Song thumbnail uploaded.', 201);
   } catch (err) {
-    console.error('uploadSongThumbnail error:', err);
-    return sendError(res, 'Thumbnail upload failed: ' + err.message, 500);
+    next(err);
   }
 };
 
@@ -535,7 +532,7 @@ const uploadSongThumbnail = async (req, res) => {
 // CAST ENDPOINTS
 // ═══════════════════════════════════════════════════════════════
 
-const addSongCast = async (req, res) => {
+const addSongCast = async (req, res, next) => {
   const { actor_id, actor_name, character_name, role_type, billing_order, headshot_url, cast_image } = req.body;
   if (!actor_id && !actor_name) return sendError(res, 'actor_id or actor_name is required.', 400);
 
@@ -572,12 +569,11 @@ const addSongCast = async (req, res) => {
     ]);
     return sendSuccess(res, { cast: result.rows[0] }, 'Artist added to song.', 201);
   } catch (err) {
-    console.error('addSongCast error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
-const removeSongCast = async (req, res) => {
+const removeSongCast = async (req, res, next) => {
   try {
     const result = await pool.query(
       'DELETE FROM content_cast WHERE id = $1 AND content_id = $2 RETURNING id',
@@ -586,8 +582,7 @@ const removeSongCast = async (req, res) => {
     if (!result.rows.length) return sendError(res, 'Artist not found on this song.', 404);
     return sendSuccess(res, {}, 'Artist removed from song.');
   } catch (err) {
-    console.error('removeSongCast error:', err);
-    return sendError(res, 'Internal server error.', 500);
+    next(err);
   }
 };
 
