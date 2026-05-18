@@ -319,6 +319,62 @@ router.put('/:seriesId', authenticate, authorize('admin'), [param('seriesId').is
  */
 router.delete('/:seriesId', authenticate, authorize('admin'), [param('seriesId').isUUID()], validate, deleteSeries);
 
+/**
+ * @swagger
+ * /episodes/upload/direct-url:
+ *   post:
+ *     summary: Create a direct Google Cloud Storage upload URL for series or episode media (admin only)
+ *     description: >
+ *       Use this for large browser uploads to avoid Cloud Run / proxy request body limits.
+ *       Upload the file to the returned `upload_url` with `PUT`, then save `public_url`
+ *       on the series or episode payload.
+ *     tags: [Episodes]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [file_name, upload_type]
+ *             properties:
+ *               file_name:
+ *                 type: string
+ *                 example: episode-01.mp4
+ *               mime_type:
+ *                 type: string
+ *                 description: Browser file MIME type. Optional when the extension is valid.
+ *                 example: video/mp4
+ *               upload_type:
+ *                 type: string
+ *                 enum: [thumbnail, trailer, video]
+ *                 example: video
+ *     responses:
+ *       200:
+ *         description: Direct resumable upload URL created.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: Direct upload URL created.
+ *               data:
+ *                 upload_url: "https://storage.googleapis.com/upload/storage/v1/b/camcine-media/o?uploadType=resumable&upload_id=..."
+ *                 public_url: "https://storage.googleapis.com/camcine-media/videos/main_video/uuid.mp4"
+ *                 file_name: "uuid.mp4"
+ *                 gcs_path: "videos/main_video/uuid.mp4"
+ *                 mime_type: "video/mp4"
+ *                 method: "PUT"
+ *                 headers:
+ *                   Content-Type: "video/mp4"
+ *                 upload_mode: "gcs_resumable"
+ *       400:
+ *         description: Invalid file name, MIME type, or upload type.
+ *       401:
+ *         description: Unauthorized.
+ *       403:
+ *         description: Admin access required.
+ */
 router.post(
   '/upload/direct-url',
   authenticate, authorize('admin'),

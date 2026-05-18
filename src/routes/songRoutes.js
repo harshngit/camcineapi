@@ -381,6 +381,62 @@ router.post('/', authenticate, authorize('admin'), songCreateRules, validate, cr
 router.put('/:id',    authenticate, authorize('admin'), [param('id').isUUID()], validate, updateSong);
 router.delete('/:id', authenticate, authorize('admin'), [param('id').isUUID()], validate, deleteSong);
 
+/**
+ * @swagger
+ * /songs/upload/direct-url:
+ *   post:
+ *     summary: Create a direct Google Cloud Storage upload URL for song media (admin only)
+ *     description: >
+ *       Use this for large browser uploads to avoid Cloud Run / proxy request body limits.
+ *       Upload the file to the returned `upload_url` with `PUT`, then save `public_url`
+ *       on the song payload as poster, thumbnail, audio, or lyrics URL.
+ *     tags: [Songs]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [file_name, upload_type]
+ *             properties:
+ *               file_name:
+ *                 type: string
+ *                 example: song.mp3
+ *               mime_type:
+ *                 type: string
+ *                 description: Browser file MIME type. Optional when the extension is valid.
+ *                 example: audio/mpeg
+ *               upload_type:
+ *                 type: string
+ *                 enum: [thumbnail, audio, lyrics]
+ *                 example: audio
+ *     responses:
+ *       200:
+ *         description: Direct resumable upload URL created.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: Direct upload URL created.
+ *               data:
+ *                 upload_url: "https://storage.googleapis.com/upload/storage/v1/b/camcine-media/o?uploadType=resumable&upload_id=..."
+ *                 public_url: "https://storage.googleapis.com/camcine-media/audio/hq/uuid.mp3"
+ *                 file_name: "uuid.mp3"
+ *                 gcs_path: "audio/hq/uuid.mp3"
+ *                 mime_type: "audio/mpeg"
+ *                 method: "PUT"
+ *                 headers:
+ *                   Content-Type: "audio/mpeg"
+ *                 upload_mode: "gcs_resumable"
+ *       400:
+ *         description: Invalid file name, MIME type, or upload type.
+ *       401:
+ *         description: Unauthorized.
+ *       403:
+ *         description: Admin access required.
+ */
 router.post(
   '/upload/direct-url',
   authenticate, authorize('admin'),
