@@ -410,7 +410,7 @@ router.delete('/:id', authenticate, authorize('admin'), [param('id').isUUID()], 
  *                 example: audio/mpeg
  *               upload_type:
  *                 type: string
- *                 enum: [thumbnail, audio, lyrics]
+ *                 enum: [thumbnail, audio, audio_lq, lyrics]
  *                 example: audio
  *     responses:
  *       200:
@@ -443,7 +443,7 @@ router.post(
   [
     body('file_name').notEmpty().trim(),
     body('mime_type').optional({ checkFalsy: true }).trim(),
-    body('upload_type').isIn(['thumbnail', 'audio', 'lyrics']),
+    body('upload_type').isIn(['thumbnail', 'audio', 'audio_lq', 'lyrics']),
   ],
   validate,
   createDirectUploadUrl

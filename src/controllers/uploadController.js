@@ -32,6 +32,11 @@ const DIRECT_UPLOAD_TYPES = {
     extensions: ['.mp3', '.m4a', '.aac', '.wav', '.flac', '.ogg'],
     mimeTypes: ['audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/wav', 'audio/flac', 'audio/ogg'],
   },
+  audio_lq: {
+    folder: 'audio/lq',
+    extensions: ['.mp3', '.m4a', '.aac', '.wav', '.flac', '.ogg'],
+    mimeTypes: ['audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/wav', 'audio/flac', 'audio/ogg'],
+  },
   lyrics: {
     folder: 'lyrics',
     extensions: ['.lrc', '.vtt', '.txt', '.srt'],

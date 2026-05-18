@@ -825,9 +825,9 @@ Body:
 }
 ```
 
-Allowed `upload_type` values: `thumbnail`, `audio`, `lyrics`.
+Allowed `upload_type` values: `thumbnail`, `audio`, `audio_lq`, `lyrics`.
 
-Use the returned `upload_url` the same way as the movie direct upload flow. Save returned `public_url` into `poster_url` / `thumbnail_url`, `audio_url_hq`, `audio_url_lq`, or `lyrics_url` depending on the upload purpose.
+Use the returned `upload_url` the same way as the movie direct upload flow. Save returned `public_url` into `poster_url` / `thumbnail_url`, `audio_url_hq`, `audio_url_lq`, or `lyrics_url` depending on the upload purpose. Use `audio` for HQ audio and `audio_lq` for LQ audio.
 
 #### Upload Song Audio
 
