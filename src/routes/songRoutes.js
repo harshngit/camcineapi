@@ -25,7 +25,7 @@ const audioUploader = createUploader('audio');
 
 const lyricsUploader = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  // no fileSize limit
   fileFilter: (req, file, cb) => {
     const allowed = ['.lrc', '.vtt', '.txt', '.srt'];
     const ext = path.extname(file.originalname).toLowerCase();

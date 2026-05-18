@@ -14,25 +14,25 @@ const { sendError } = require('../utils/response');
 const FILE_CONFIG = {
   image: {
     mimeTypes: ['image/jpeg','image/jpg','image/png','image/webp'],
-    maxSize:   10 * 1024 * 1024,   // 10MB
+    maxSize:   Infinity,  // no limit
     folder:    'images',
     extensions: ['.jpg','.jpeg','.png','.webp'],
   },
   video: {
     mimeTypes: ['video/mp4','video/x-msvideo','video/quicktime','video/x-matroska','video/webm'],
-    maxSize:   5 * 1024 * 1024 * 1024,  // 5GB
+    maxSize:   Infinity,  // no limit — any size movie file allowed
     folder:    'videos',
     extensions: ['.mp4','.avi','.mov','.mkv','.webm'],
   },
   trailer: {
     mimeTypes: ['video/mp4','video/quicktime','video/webm'],
-    maxSize:   500 * 1024 * 1024,  // 500MB
+    maxSize:   Infinity,  // no limit
     folder:    'trailers',
     extensions: ['.mp4','.mov','.webm'],
   },
   audio: {
     mimeTypes: ['audio/mpeg','audio/mp4','audio/aac','audio/wav','audio/flac','audio/ogg'],
-    maxSize:   100 * 1024 * 1024,  // 100MB
+    maxSize:   Infinity,  // no limit
     folder:    'audio',
     extensions: ['.mp3','.m4a','.aac','.wav','.flac','.ogg'],
   },
@@ -46,9 +46,15 @@ const createUploader = (fileType) => {
   const config = FILE_CONFIG[fileType];
   if (!config) throw new Error(`Unknown file type: ${fileType}`);
 
+  // Only set limits when there's a real numeric cap.
+  // Omitting 'limits' entirely = no size restriction from multer.
+  const limitsConfig = (config.maxSize !== Infinity)
+    ? { limits: { fileSize: config.maxSize } }
+    : {};
+
   return multer({
     storage: memStorage,
-    limits: { fileSize: config.maxSize },
+    ...limitsConfig,
     fileFilter: (req, file, cb) => {
       const ext = path.extname(file.originalname).toLowerCase();
       if (config.mimeTypes.includes(file.mimetype) && config.extensions.includes(ext)) {
