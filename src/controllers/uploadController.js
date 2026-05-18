@@ -5,8 +5,85 @@
 // ============================================================
 
 const { uploadToGCS, saveUploadRecord } = require('../middleware/uploadMiddleware');
+const { bucket, BUCKET_NAME } = require('../config/gcsClient');
 const pool = require('../config/db');
 const { sendSuccess, sendError } = require('../utils/response');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+
+const DIRECT_UPLOAD_TYPES = {
+  thumbnail: {
+    folder: 'images/thumbnail',
+    extensions: ['.jpg', '.jpeg', '.png', '.webp'],
+    mimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+  },
+  trailer: {
+    folder: 'videos/trailer',
+    extensions: ['.mp4', '.mov', '.webm'],
+    mimeTypes: ['video/mp4', 'video/quicktime', 'video/webm'],
+  },
+  video: {
+    folder: 'videos/main_video',
+    extensions: ['.mp4', '.avi', '.mov', '.mkv', '.webm'],
+    mimeTypes: ['video/mp4', 'video/x-msvideo', 'video/quicktime', 'video/x-matroska', 'video/webm'],
+  },
+  audio: {
+    folder: 'audio/hq',
+    extensions: ['.mp3', '.m4a', '.aac', '.wav', '.flac', '.ogg'],
+    mimeTypes: ['audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/wav', 'audio/flac', 'audio/ogg'],
+  },
+  lyrics: {
+    folder: 'lyrics',
+    extensions: ['.lrc', '.vtt', '.txt', '.srt'],
+    mimeTypes: ['text/plain', 'text/vtt', 'application/octet-stream'],
+  },
+};
+
+const normalizeMimeType = (mimeType) => mimeType || 'application/octet-stream';
+
+const createDirectUploadUrl = async (req, res, next) => {
+  try {
+    const { file_name, mime_type, upload_type } = req.body;
+    if (!file_name || !upload_type) {
+      return sendError(res, 'file_name, mime_type, and upload_type are required.', 400);
+    }
+
+    const config = DIRECT_UPLOAD_TYPES[upload_type];
+    if (!config) return sendError(res, 'Invalid upload_type.', 400);
+
+    const ext = path.extname(file_name).toLowerCase();
+    const normalizedMimeType = normalizeMimeType(mime_type);
+    const hasAllowedExtension = config.extensions.includes(ext);
+    const hasAllowedMimeType = config.mimeTypes.includes(normalizedMimeType);
+    const hasGenericMimeType = normalizedMimeType === 'application/octet-stream';
+    if (!hasAllowedExtension || (!hasAllowedMimeType && !hasGenericMimeType)) {
+      return sendError(res, `Invalid file type for ${upload_type}.`, 400);
+    }
+
+    const uniqueName = `${uuidv4()}${ext}`;
+    const gcsPath = `${config.folder}/${uniqueName}`;
+    const file = bucket.file(gcsPath);
+    const [uploadUrl] = await file.createResumableUpload({
+      origin: req.get('origin') || '*',
+      metadata: {
+        contentType: normalizedMimeType,
+      },
+    });
+
+    return sendSuccess(res, {
+      upload_url: uploadUrl,
+      public_url: `https://storage.googleapis.com/${BUCKET_NAME}/${gcsPath}`,
+      file_name: uniqueName,
+      gcs_path: gcsPath,
+      mime_type: normalizedMimeType,
+      method: 'PUT',
+      headers: { 'Content-Type': normalizedMimeType },
+      upload_mode: 'gcs_resumable',
+    }, 'Direct upload URL created.');
+  } catch (err) {
+    next(err);
+  }
+};
 
 // ─────────────────────────────────────────────────────────────
 // HELPER — Update content/episode URL fields after upload
@@ -263,7 +340,7 @@ const getUploadHistory = async (req, res, next) => {
 // Upload lyrics file (LRC or WebVTT) for songs
 // Field: file (single)
 // ─────────────────────────────────────────────────────────────
-const uploadLyrics = async (req, res) => {
+const uploadLyrics = async (req, res, next) => {
   try {
     if (!req.file) return sendError(res, 'No file provided.', 400);
 
@@ -379,6 +456,7 @@ const deleteUpload = async (req, res, next) => {
 };
 
 module.exports = {
+  createDirectUploadUrl,
   uploadImage,
   uploadVideo,
   uploadAudio,

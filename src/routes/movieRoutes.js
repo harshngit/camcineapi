@@ -14,7 +14,7 @@ const {
 } = require('../controllers/movieController');
 const { authenticate, authorize } = require('../middleware/auth');
 const { createUploader, handleMulterError } = require('../middleware/uploadMiddleware');
-const { uploadImage, uploadVideo } = require('../controllers/uploadController');
+const { createDirectUploadUrl, uploadImage, uploadVideo } = require('../controllers/uploadController');
 const validate = require('../middleware/validate');
 
 const imageUploader   = createUploader('image');
@@ -358,6 +358,74 @@ router.patch(
  *         description: Not found or already archived
  */
 router.delete('/:id', authenticate, authorize('admin'), [param('id').isUUID()], validate, deleteMovie);
+
+/**
+ * @swagger
+ * /movies/upload/direct-url:
+ *   post:
+ *     summary: Create a direct Google Cloud Storage upload URL for movie media (admin only)
+ *     description: >
+ *       Use this for large browser uploads to avoid Cloud Run / proxy request body limits.
+ *       Upload the file to the returned `upload_url` with `PUT`, then save `public_url`
+ *       on the movie payload as `poster_url`, `thumbnail_url`, `trailer_url`, or `video_url`.
+ *     tags: [Movies]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [file_name, upload_type]
+ *             properties:
+ *               file_name:
+ *                 type: string
+ *                 example: trailer.mov
+ *               mime_type:
+ *                 type: string
+ *                 description: Browser file MIME type. Optional when the extension is valid.
+ *                 example: video/quicktime
+ *               upload_type:
+ *                 type: string
+ *                 enum: [thumbnail, trailer, video]
+ *                 example: trailer
+ *     responses:
+ *       200:
+ *         description: Direct resumable upload URL created.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: Direct upload URL created.
+ *               data:
+ *                 upload_url: "https://storage.googleapis.com/upload/storage/v1/b/camcine-media/o?uploadType=resumable&upload_id=..."
+ *                 public_url: "https://storage.googleapis.com/camcine-media/videos/trailer/uuid.mov"
+ *                 file_name: "uuid.mov"
+ *                 gcs_path: "videos/trailer/uuid.mov"
+ *                 mime_type: "video/quicktime"
+ *                 method: "PUT"
+ *                 headers:
+ *                   Content-Type: "video/quicktime"
+ *                 upload_mode: "gcs_resumable"
+ *       400:
+ *         description: Invalid file name, MIME type, or upload type.
+ *       401:
+ *         description: Unauthorized.
+ *       403:
+ *         description: Admin access required.
+ */
+router.post(
+  '/upload/direct-url',
+  authenticate, authorize('admin'),
+  [
+    body('file_name').notEmpty().trim(),
+    body('mime_type').optional({ checkFalsy: true }).trim(),
+    body('upload_type').isIn(['thumbnail', 'trailer', 'video']),
+  ],
+  validate,
+  createDirectUploadUrl
+);
 
 // ═══════════════════════════════════════════════════════════════
 // UPLOAD ENDPOINTS

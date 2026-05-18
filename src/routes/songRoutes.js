@@ -18,6 +18,7 @@ const {
 } = require('../controllers/songController');
 const { authenticate, authorize } = require('../middleware/auth');
 const { createUploader, handleMulterError } = require('../middleware/uploadMiddleware');
+const { createDirectUploadUrl } = require('../controllers/uploadController');
 const validate = require('../middleware/validate');
 
 const imageUploader = createUploader('image');
@@ -379,6 +380,18 @@ router.post('/', authenticate, authorize('admin'), songCreateRules, validate, cr
  */
 router.put('/:id',    authenticate, authorize('admin'), [param('id').isUUID()], validate, updateSong);
 router.delete('/:id', authenticate, authorize('admin'), [param('id').isUUID()], validate, deleteSong);
+
+router.post(
+  '/upload/direct-url',
+  authenticate, authorize('admin'),
+  [
+    body('file_name').notEmpty().trim(),
+    body('mime_type').optional({ checkFalsy: true }).trim(),
+    body('upload_type').isIn(['thumbnail', 'audio', 'lyrics']),
+  ],
+  validate,
+  createDirectUploadUrl
+);
 
 // ═══════════════════════════════════════════════════════════════
 // UPLOAD ENDPOINTS — song_id in request body, no ID in URL

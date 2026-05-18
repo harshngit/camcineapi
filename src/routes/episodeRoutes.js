@@ -20,7 +20,7 @@ const {
 } = require('../controllers/episodeController');
 const { authenticate, authorize } = require('../middleware/auth');
 const { createUploader, handleMulterError } = require('../middleware/uploadMiddleware');
-const { uploadImage, uploadVideo } = require('../controllers/uploadController');
+const { createDirectUploadUrl, uploadImage, uploadVideo } = require('../controllers/uploadController');
 const validate = require('../middleware/validate');
 
 const imageUploader   = createUploader('image');
@@ -318,6 +318,18 @@ router.put('/:seriesId', authenticate, authorize('admin'), [param('seriesId').is
  *         description: Not found or already archived
  */
 router.delete('/:seriesId', authenticate, authorize('admin'), [param('seriesId').isUUID()], validate, deleteSeries);
+
+router.post(
+  '/upload/direct-url',
+  authenticate, authorize('admin'),
+  [
+    body('file_name').notEmpty().trim(),
+    body('mime_type').optional({ checkFalsy: true }).trim(),
+    body('upload_type').isIn(['thumbnail', 'trailer', 'video']),
+  ],
+  validate,
+  createDirectUploadUrl
+);
 
 // ═══════════════════════════════════════════════════════════════
 // EPISODE CRUD — episodes are created UNDER their series
