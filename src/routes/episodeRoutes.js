@@ -18,7 +18,7 @@ const {
   addSeriesCast, removeSeriesCast,
   addEpisodeCast, removeEpisodeCast,
 } = require('../controllers/episodeController');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticate, optionalAuthenticate, authorize } = require('../middleware/auth');
 const { createUploader, handleMulterError } = require('../middleware/uploadMiddleware');
 const { createDirectUploadUrl, uploadImage, uploadVideo } = require('../controllers/uploadController');
 const validate = require('../middleware/validate');
@@ -61,12 +61,16 @@ const episodeRules = [
  * @swagger
  * /episodes:
  *   get:
- *     summary: List all published series / shows
+ *     summary: List series / shows with filters & pagination
+ *     description: Public requests return published series / shows only. Admin requests with a Bearer token may filter by status or omit status to include all statuses.
  *     tags: [Episodes]
- *     security: []
+ *     security:
+ *       - bearerAuth: []
+ *       - {}
  *     parameters:
  *       - { in: query, name: page,     schema: { type: integer, default: 1 } }
  *       - { in: query, name: limit,    schema: { type: integer, default: 10 } }
+ *       - { in: query, name: status,   schema: { type: string, enum: [draft, processing, published, archived] }, description: "Admin only. Public requests are always limited to published content." }
  *       - { in: query, name: language, schema: { type: string } }
  *       - { in: query, name: region,   schema: { type: string } }
  *       - { in: query, name: genre,    schema: { type: string } }
@@ -95,7 +99,7 @@ const episodeRules = [
  *                   page: 1
  *                   total: 10
  */
-router.get('/', getAllSeries);
+router.get('/', optionalAuthenticate, getAllSeries);
 
 /**
  * @swagger

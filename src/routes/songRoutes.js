@@ -16,7 +16,7 @@ const {
   uploadSongAudio, uploadSongLyrics, uploadSongThumbnail,
   addSongCast, removeSongCast,
 } = require('../controllers/songController');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticate, optionalAuthenticate, authorize } = require('../middleware/auth');
 const { createUploader, handleMulterError } = require('../middleware/uploadMiddleware');
 const { createDirectUploadUrl } = require('../controllers/uploadController');
 const validate = require('../middleware/validate');
@@ -63,12 +63,16 @@ const songCreateRules = [
  * @swagger
  * /songs:
  *   get:
- *     summary: List all published songs with filters & pagination
+ *     summary: List songs with filters & pagination
+ *     description: Public requests return published songs only. Admin requests with a Bearer token may filter by status or omit status to include all statuses.
  *     tags: [Songs]
- *     security: []
+ *     security:
+ *       - bearerAuth: []
+ *       - {}
  *     parameters:
  *       - { in: query, name: page,     schema: { type: integer, default: 1 } }
  *       - { in: query, name: limit,    schema: { type: integer, default: 10 } }
+ *       - { in: query, name: status,   schema: { type: string, enum: [draft, processing, published, archived] }, description: "Admin only. Public requests are always limited to published content." }
  *       - { in: query, name: language, schema: { type: string } }
  *       - { in: query, name: genre,    schema: { type: string } }
  *       - { in: query, name: is_free,  schema: { type: boolean } }
@@ -103,7 +107,7 @@ const songCreateRules = [
  *                   page: 1
  *                   total: 25
  */
-router.get('/', getAllSongs);
+router.get('/', optionalAuthenticate, getAllSongs);
 
 /**
  * @swagger

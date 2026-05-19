@@ -28,6 +28,31 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+const optionalAuthenticate = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return next();
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = verifyToken(token);
+
+    const result = await pool.query(
+      'SELECT id, email, first_name, last_name, phone_number, role, age, language_preferences, regions, is_active FROM users WHERE id = $1',
+      [decoded.id]
+    );
+
+    if (result.rows.length && result.rows[0].is_active) {
+      req.user = result.rows[0];
+    }
+
+    next();
+  } catch {
+    next();
+  }
+};
+
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
@@ -37,4 +62,4 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { authenticate, authorize };
+module.exports = { authenticate, optionalAuthenticate, authorize };
