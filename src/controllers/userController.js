@@ -99,13 +99,21 @@ const updateUser = async (req, res, next) => {
 // ── Delete User ───────────────────────────────────────────────────────────────
 const deleteUser = async (req, res, next) => {
   const { id } = req.params;
+
+  if (req.user?.id === id) {
+    return sendError(res, 'You cannot deactivate your own account.', 400);
+  }
+
   try {
     const result = await pool.query(
-      'UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1 RETURNING id',
+      `UPDATE users
+       SET is_active = false, updated_at = NOW()
+       WHERE id = $1 AND is_active = true
+       RETURNING id, email, first_name, last_name, role, is_active, updated_at`,
       [id]
     );
-    if (!result.rows.length) return sendError(res, 'User not found.', 404);
-    return sendSuccess(res, {}, 'User deactivated successfully.');
+    if (!result.rows.length) return sendError(res, 'User not found or already inactive.', 404);
+    return sendSuccess(res, { user: result.rows[0] }, 'User deactivated successfully.');
   } catch (err) {
     next(err);
   }

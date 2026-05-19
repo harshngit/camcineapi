@@ -122,6 +122,10 @@ router.put('/:id',
  * /users/{id}:
  *   delete:
  *     summary: Deactivate a user (admin only)
+ *     description: >
+ *       Soft deactivates a user by setting `is_active` to `false`.
+ *       This does not remove the user row from the database. Admins cannot
+ *       deactivate their own account, and already inactive users return 404.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -129,14 +133,35 @@ router.put('/:id',
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: string, format: uuid }
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: User UUID to deactivate.
  *     responses:
  *       200:
- *         description: User deactivated
+ *         description: User deactivated successfully.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "User deactivated successfully."
+ *               data:
+ *                 user:
+ *                   id: "247dae77-9420-4186-8d51-a7f90d9f8712"
+ *                   email: "viewer@example.com"
+ *                   first_name: "Aditya"
+ *                   last_name: "Borhade"
+ *                   role: "viewer"
+ *                   is_active: false
+ *                   updated_at: "2026-05-19T08:30:00.000Z"
+ *       400:
+ *         description: Admin attempted to deactivate their own account.
+ *       401:
+ *         description: Unauthorized. Missing or invalid bearer token.
  *       403:
- *         description: Forbidden
+ *         description: Admin access required.
  *       404:
- *         description: User not found
+ *         description: User not found or already inactive.
  */
 router.delete('/:id',
   authenticate,
