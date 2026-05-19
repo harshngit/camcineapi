@@ -350,16 +350,41 @@ router.patch(
  * /movies/{id}:
  *   delete:
  *     summary: Archive (soft delete) a movie (admin only)
+ *     description: >
+ *       Soft deletes a movie by setting `content.status` to `archived`.
+ *       The movie is not physically removed from the database. Admin list
+ *       endpoints hide archived content by default unless `status=archived`
+ *       is requested.
  *     tags: [Movies]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Movie content UUID.
  *     responses:
  *       200:
- *         description: Movie archived
+ *         description: Movie archived successfully.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Movie archived successfully."
+ *               data:
+ *                 movie:
+ *                   id: "6e6d9d6f-8777-45f4-a2e7-2d9158a0f4e4"
+ *                   title: "Black Cat"
+ *                   status: "archived"
+ *       401:
+ *         description: Unauthorized. Missing or invalid bearer token.
+ *       403:
+ *         description: Admin access required.
  *       404:
- *         description: Not found or already archived
+ *         description: Movie not found or already archived.
  */
 router.delete('/:id', authenticate, authorize('admin'), [param('id').isUUID()], validate, deleteMovie);
 

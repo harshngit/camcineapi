@@ -309,17 +309,38 @@ router.put('/:seriesId', authenticate, authorize('admin'), [param('seriesId').is
  * @swagger
  * /episodes/{seriesId}:
  *   delete:
- *     summary: Archive a series (admin only)
+ *     summary: Archive (soft delete) a series or short film (admin only)
+ *     description: >
+ *       Soft deletes a TV show / series or short film by setting
+ *       `content.status` to `archived`. The content is not physically removed
+ *       from the database. Admin list endpoints hide archived content by
+ *       default unless `status=archived` is requested.
  *     tags: [Episodes]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - { in: path, name: seriesId, required: true, schema: { type: string, format: uuid } }
+ *       - in: path
+ *         name: seriesId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Series, TV show, or short film content UUID.
  *     responses:
  *       200:
- *         description: Series archived
+ *         description: Series or short film archived successfully.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Series archived."
+ *               data: {}
+ *       401:
+ *         description: Unauthorized. Missing or invalid bearer token.
+ *       403:
+ *         description: Admin access required.
  *       404:
- *         description: Not found or already archived
+ *         description: Series not found or already archived.
  */
 router.delete('/:seriesId', authenticate, authorize('admin'), [param('seriesId').isUUID()], validate, deleteSeries);
 
@@ -510,16 +531,43 @@ router.post(
  *       200:
  *         description: Episode updated
  *   delete:
- *     summary: Archive an episode (admin only)
+ *     summary: Archive (soft delete) an episode (admin only)
+ *     description: >
+ *       Soft deletes an episode by setting `episodes.status` to `archived`.
+ *       The episode row is not physically removed from the database.
  *     tags: [Episodes]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - { in: path, name: seriesId,  required: true, schema: { type: string, format: uuid } }
- *       - { in: path, name: episodeId, required: true, schema: { type: string, format: uuid } }
+ *       - in: path
+ *         name: seriesId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Parent series content UUID.
+ *       - in: path
+ *         name: episodeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Episode UUID.
  *     responses:
  *       200:
- *         description: Episode archived
+ *         description: Episode archived successfully.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Episode archived."
+ *               data: {}
+ *       401:
+ *         description: Unauthorized. Missing or invalid bearer token.
+ *       403:
+ *         description: Admin access required.
+ *       404:
+ *         description: Episode not found or already archived.
  */
 router.put('/:seriesId/episode/:episodeId',    authenticate, authorize('admin'), [param('seriesId').isUUID(), param('episodeId').isUUID()], validate, updateEpisode);
 router.delete('/:seriesId/episode/:episodeId', authenticate, authorize('admin'), [param('seriesId').isUUID(), param('episodeId').isUUID()], validate, deleteEpisode);

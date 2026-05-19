@@ -373,14 +373,37 @@ router.post('/', authenticate, authorize('admin'), songCreateRules, validate, cr
  *         description: Song updated
  *   delete:
  *     summary: Archive (soft delete) a song (admin only)
+ *     description: >
+ *       Soft deletes a song by setting `content.status` to `archived`.
+ *       The song is not physically removed from the database. Admin list
+ *       endpoints hide archived content by default unless `status=archived`
+ *       is requested.
  *     tags: [Songs]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Song content UUID.
  *     responses:
  *       200:
- *         description: Song archived
+ *         description: Song archived successfully.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Song archived."
+ *               data: {}
+ *       401:
+ *         description: Unauthorized. Missing or invalid bearer token.
+ *       403:
+ *         description: Admin access required.
+ *       404:
+ *         description: Song not found or already archived.
  */
 router.put('/:id',    authenticate, authorize('admin'), [param('id').isUUID()], validate, updateSong);
 router.delete('/:id', authenticate, authorize('admin'), [param('id').isUUID()], validate, deleteSong);
