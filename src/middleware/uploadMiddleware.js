@@ -6,7 +6,7 @@
 const multer = require('multer');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-const { bucket, BUCKET_NAME } = require('../config/gcsClient');
+const { getBucket, BUCKET_NAME } = require('../config/gcsClient');
 const pool = require('../config/db');
 const { sendError } = require('../utils/response');
 
@@ -74,6 +74,7 @@ const uploadToGCS = async ({ fileBuffer, originalName, mimeType, fileType, folde
   const uniqueName = `${uuidv4()}${ext}`;
   const gcsPath = `${folder}/${uniqueName}`;
 
+  const bucket = getBucket();
   const file = bucket.file(gcsPath);
 
   await new Promise((resolve, reject) => {

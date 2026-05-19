@@ -48,10 +48,21 @@ if (process.env.NODE_ENV !== 'production' && !CREDENTIALS) {
 // ── Build Storage client ──────────────────────────────────────
 // If GOOGLE_APPLICATION_CREDENTIALS is set, the SDK picks it up automatically.
 // If on Cloud Run, it uses the attached service account automatically.
-const storage = new Storage({
-  projectId: PROJECT_ID,
-});
+const storage = BUCKET_NAME
+  ? new Storage(PROJECT_ID ? { projectId: PROJECT_ID } : {})
+  : null;
 
-const bucket = storage.bucket(BUCKET_NAME);
+const bucket = storage ? storage.bucket(BUCKET_NAME) : null;
 
-module.exports = { storage, bucket, BUCKET_NAME };
+const getBucket = () => {
+  if (!bucket) {
+    const err = new Error(
+      'Google Cloud Storage is not configured. Set GCP_PROJECT_ID and GCS_BUCKET_NAME in .env.'
+    );
+    err.statusCode = 503;
+    throw err;
+  }
+  return bucket;
+};
+
+module.exports = { storage, bucket, getBucket, BUCKET_NAME };

@@ -52,6 +52,10 @@ app.use((err, req, res, next) => {
     return res.status(statusCode).json({ success: false, message, errors: [] });
   }
 
+  if (err.statusCode) {
+    return res.status(err.statusCode).json({ success: false, message: err.message, errors: [] });
+  }
+
   return res.status(500).json({ success: false, message: 'Internal server error.' });
 });
 

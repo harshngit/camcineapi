@@ -5,7 +5,7 @@
 // ============================================================
 
 const { uploadToGCS, saveUploadRecord } = require('../middleware/uploadMiddleware');
-const { bucket, BUCKET_NAME } = require('../config/gcsClient');
+const { getBucket, BUCKET_NAME } = require('../config/gcsClient');
 const pool = require('../config/db');
 const { sendSuccess, sendError } = require('../utils/response');
 const path = require('path');
@@ -67,6 +67,7 @@ const createDirectUploadUrl = async (req, res, next) => {
 
     const uniqueName = `${uuidv4()}${ext}`;
     const gcsPath = `${config.folder}/${uniqueName}`;
+    const bucket = getBucket();
     const file = bucket.file(gcsPath);
     const [uploadUrl] = await file.createResumableUpload({
       origin: req.get('origin') || '*',
@@ -443,11 +444,11 @@ const deleteUpload = async (req, res, next) => {
     if (!result.rows.length) return sendError(res, 'Upload not found.', 404);
 
     const upload = result.rows[0];
-    const { bucket } = require('../config/gcsClient');
+    const { getBucket } = require('../config/gcsClient');
 
     // Delete from GCS
     try {
-      await bucket.file(upload.gcs_path).delete();
+      await getBucket().file(upload.gcs_path).delete();
     } catch (gcsErr) {
       console.warn('GCS delete warning (file may not exist):', gcsErr.message);
     }
