@@ -183,6 +183,7 @@ Query params:
 | `limit` | number | Default `10` |
 | `language` | string | Case-insensitive |
 | `region` | string | Case-insensitive |
+| `country` | string | Case-insensitive |
 | `genre` | string | Matches one genre |
 | `is_free` | boolean | `true` / `false` |
 | `search` | string | Title or description |
@@ -250,6 +251,7 @@ Body:
   "description": "A story of a wrestler and his daughters.",
   "language": "Hindi",
   "region": "India",
+  "country": "India",
   "genre": ["Drama", "Sports"],
   "director": "Nitesh Tiwari",
   "release_year": 2016,
@@ -298,7 +300,7 @@ PUT /movies/{id}
 
 Requires admin.
 
-Allowed fields: `title`, `description`, `language`, `region`, `genre`, `director`, `release_year`, `rating`, `status`, `poster_url`, `thumbnail_url`, `trailer_url`, `video_url`, `stream_url_hls`, `stream_url_dash`, `duration_seconds`, `is_free`, `price_tvod`, `imdb_id`, `tags`.
+Allowed fields: `title`, `description`, `language`, `region`, `country`, `genre`, `director`, `release_year`, `rating`, `status`, `poster_url`, `thumbnail_url`, `trailer_url`, `video_url`, `stream_url_hls`, `stream_url_dash`, `duration_seconds`, `is_free`, `price_tvod`, `imdb_id`, `tags`.
 
 ### Update Movie Status
 

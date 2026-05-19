@@ -19,6 +19,7 @@ const buildWhere = (filters) => {
     if (key === 'exclude_archived' && val) { conditions.push(`status != 'archived'`); }
     if (key === 'language') { conditions.push(`language ILIKE $${idx++}`);   params.push(val); }
     if (key === 'region')   { conditions.push(`region ILIKE $${idx++}`);     params.push(val); }
+    if (key === 'country')  { conditions.push(`country ILIKE $${idx++}`);    params.push(val); }
     if (key === 'is_free')  { conditions.push(`is_free = $${idx++}`);        params.push(val === 'true' || val === true); }
     if (key === 'genre')    { conditions.push(`genre @> $${idx++}::jsonb`);  params.push(JSON.stringify([val])); }
     if (key === 'search')   {
@@ -44,7 +45,7 @@ const buildWhere = (filters) => {
 const getAllMovies = async (req, res, next) => {
   const {
     page = 1, limit = 10,
-    language, region, genre, is_free,
+    language, region, country, genre, is_free,
     search, year, rating,
     sort = 'newest',
   } = req.query;
@@ -64,12 +65,12 @@ const getAllMovies = async (req, res, next) => {
 
   try {
     const { where, params, nextIdx } = buildWhere({
-      status: statusFilter, exclude_archived: isAdmin && !statusFilter, language, region, genre, is_free, search, year, rating,
+      status: statusFilter, exclude_archived: isAdmin && !statusFilter, language, region, country, genre, is_free, search, year, rating,
     });
 
     const dataQuery = `
       SELECT
-        c.id, c.title, c.description, c.language, c.region,
+        c.id, c.title, c.description, c.language, c.region, c.country,
         c.genre, c.director, c.release_year, c.rating, c.status,
         c.poster_url,
         c.thumbnail_url,
@@ -135,7 +136,7 @@ const getMovieById = async (req, res, next) => {
   try {
     const result = await pool.query(`
       SELECT
-        c.id, c.title, c.description, c.language, c.region,
+        c.id, c.title, c.description, c.language, c.region, c.country,
         c.genre, c.director, c.release_year, c.rating, c.status,
         c.poster_url,
         c.thumbnail_url,
@@ -179,7 +180,7 @@ const getMovieById = async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────
 const createMovie = async (req, res, next) => {
   const {
-    title, description, language, region,
+    title, description, language, region, country,
     genre, director, release_year, rating,
     poster_url, thumbnail_url, trailer_url, video_url,
     stream_url_hls, stream_url_dash,
@@ -193,16 +194,16 @@ const createMovie = async (req, res, next) => {
 
     const result = await client.query(`
       INSERT INTO content (
-        title, type, description, language, region,
+        title, type, description, language, region, country,
         genre, director, release_year, rating,
         poster_url, thumbnail_url, trailer_url, video_url,
         stream_url_hls, stream_url_dash,
         duration_seconds, is_free, price_tvod, imdb_id, tags,
         status, created_by
-      ) VALUES ($1,'movie',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,'draft',$20)
+      ) VALUES ($1,'movie',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,'draft',$21)
       RETURNING *
     `, [
-      title, description, language, region,
+      title, description, language, region, country,
       JSON.stringify(genre || []),
       director, release_year, rating,
       poster_url, thumbnail_url, trailer_url, video_url,
@@ -260,7 +261,7 @@ const createMovie = async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────
 const updateMovie = async (req, res, next) => {
   const allowedFields = [
-    'title', 'description', 'language', 'region',
+    'title', 'description', 'language', 'region', 'country',
     'genre', 'director', 'release_year', 'rating', 'status',
     'poster_url', 'thumbnail_url', 'trailer_url', 'video_url',
     'stream_url_hls', 'stream_url_dash',

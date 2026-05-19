@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS content (
     description       TEXT,
     language          VARCHAR(50),
     region            VARCHAR(100),
+    country           VARCHAR(100),
     genre             JSONB NOT NULL DEFAULT '[]'::jsonb,
     cast_ids          JSONB NOT NULL DEFAULT '[]'::jsonb,
     director          VARCHAR(255),
@@ -41,6 +42,7 @@ CREATE INDEX IF NOT EXISTS idx_content_type       ON content(type);
 CREATE INDEX IF NOT EXISTS idx_content_status     ON content(status);
 CREATE INDEX IF NOT EXISTS idx_content_language   ON content(language);
 CREATE INDEX IF NOT EXISTS idx_content_region     ON content(region);
+CREATE INDEX IF NOT EXISTS idx_content_country    ON content(country);
 CREATE INDEX IF NOT EXISTS idx_content_is_free    ON content(is_free);
 CREATE INDEX IF NOT EXISTS idx_content_created_at ON content(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_content_title      ON content USING gin(to_tsvector('english', title));

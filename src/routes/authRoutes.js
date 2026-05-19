@@ -85,13 +85,17 @@ const validate = require('../middleware/validate');
  */
 router.post('/register',
   [
-    body('email').isEmail().normalizeEmail(),
-    body('first_name').notEmpty().trim(),
-    body('last_name').notEmpty().trim(),
-    body('password').isLength({ min: 6 }),
-    body('role').optional().isIn(['viewer', 'actor', 'manager', 'admin']),
-    body('age').optional().isInt({ min: 1 }),
-    body('phone_number').optional().isMobilePhone(),
+    body('email').isEmail().withMessage('Enter a valid email address.').normalizeEmail(),
+    body('first_name').notEmpty().withMessage('First name is required.').trim(),
+    body('last_name').notEmpty().withMessage('Last name is required.').trim(),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters.'),
+    body('role').optional({ checkFalsy: true }).isIn(['viewer', 'actor', 'manager', 'admin']).withMessage('Role must be viewer, actor, manager, or admin.'),
+    body('age').optional({ checkFalsy: true }).isInt({ min: 1 }).withMessage('Age must be a positive number.'),
+    body('phone_number')
+      .optional({ checkFalsy: true })
+      .trim()
+      .matches(/^\+?[0-9]{10,15}$/)
+      .withMessage('Phone number must contain 10 to 15 digits and may start with +.'),
   ],
   validate,
   register
@@ -163,10 +167,14 @@ router.post('/register',
  */
 router.post('/login',
   [
-    body('password').notEmpty(),
-    body('id').optional().isUUID(),
-    body('email').optional().isEmail().normalizeEmail(),
-    body('phone_number').optional().isMobilePhone(),
+    body('password').notEmpty().withMessage('Password is required.'),
+    body('id').optional({ checkFalsy: true }).isUUID().withMessage('User ID must be a valid UUID.'),
+    body('email').optional({ checkFalsy: true }).isEmail().withMessage('Enter a valid email address.').normalizeEmail(),
+    body('phone_number')
+      .optional({ checkFalsy: true })
+      .trim()
+      .matches(/^\+?[0-9]{10,15}$/)
+      .withMessage('Phone number must contain 10 to 15 digits and may start with +.'),
   ],
   validate,
   login

@@ -107,8 +107,12 @@ router.put('/:id',
     param('id').isUUID(),
     body('first_name').optional().notEmpty().trim(),
     body('last_name').optional().notEmpty().trim(),
-    body('phone_number').optional().isMobilePhone(),
-    body('age').optional().isInt({ min: 1 }),
+    body('phone_number')
+      .optional({ checkFalsy: true })
+      .trim()
+      .matches(/^\+?[0-9]{10,15}$/)
+      .withMessage('Phone number must contain 10 to 15 digits and may start with +.'),
+    body('age').optional({ checkFalsy: true }).isInt({ min: 1 }).withMessage('Age must be a positive number.'),
     body('language_preferences').optional().isArray(),
     body('regions').optional().isArray(),
     body('role').optional().isIn(['viewer', 'actor', 'manager', 'admin']),

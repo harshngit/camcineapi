@@ -25,6 +25,7 @@ const movieCreateRules = [
   body('title').notEmpty().trim().withMessage('Title is required'),
   body('rating').optional().isIn(['U', 'UA', 'A', 'S']),
   body('release_year').optional().isInt({ min: 1900, max: 2100 }),
+  body('country').optional().isString().trim().isLength({ max: 100 }),
   body('price_tvod').optional().isFloat({ min: 0 }),
   body('duration_seconds').optional().isInt({ min: 1 }),
   body('is_free').optional().isBoolean(),
@@ -60,6 +61,7 @@ const movieCreateRules = [
  *       - { in: query, name: status,   schema: { type: string, enum: [draft, processing, published, archived] }, description: "Admin only. Public requests are always limited to published content." }
  *       - { in: query, name: language, schema: { type: string }, example: Hindi }
  *       - { in: query, name: region,   schema: { type: string }, example: Maharashtra }
+ *       - { in: query, name: country,  schema: { type: string }, example: India }
  *       - { in: query, name: genre,    schema: { type: string }, example: Drama }
  *       - { in: query, name: is_free,  schema: { type: boolean } }
  *       - { in: query, name: search,   schema: { type: string } }
@@ -77,6 +79,7 @@ const movieCreateRules = [
  *                 movies:
  *                   - id: "uuid"
  *                     title: "Dangal"
+ *                     country: "India"
  *                     poster_url: "https://storage.googleapis.com/camcine-media/images/poster/dangal.jpg"
  *                     thumbnail_url: "https://storage.googleapis.com/camcine-media/images/thumbnail/dangal.jpg"
  *                     trailer_url: "https://storage.googleapis.com/camcine-media/trailers/dangal.mp4"
@@ -114,6 +117,7 @@ router.get('/', optionalAuthenticate, getAllMovies);
  *                 movie:
  *                   id: "uuid"
  *                   title: "Dangal"
+ *                   country: "India"
  *                   poster_url: "https://..."
  *                   thumbnail_url: "https://..."
  *                   trailer_url: "https://..."
@@ -159,6 +163,9 @@ router.get('/:id', [param('id').isUUID()], validate, getMovieById);
  *               region:
  *                 type: string
  *                 example: "Pan-India"
+ *               country:
+ *                 type: string
+ *                 example: "India"
  *               genre:
  *                 type: array
  *                 items: { type: string }
@@ -229,6 +236,7 @@ router.get('/:id', [param('id').isUUID()], validate, getMovieById);
  *           example:
  *             title: "Dangal"
  *             language: "Hindi"
+ *             country: "India"
  *             genre: ["Drama", "Sports"]
  *             director: "Nitesh Tiwari"
  *             release_year: 2016
@@ -283,6 +291,7 @@ router.post('/', authenticate, authorize('admin'), movieCreateRules, validate, c
  *               description:      { type: string }
  *               language:         { type: string }
  *               region:           { type: string }
+ *               country:          { type: string }
  *               genre:            { type: array, items: { type: string } }
  *               director:         { type: string }
  *               release_year:     { type: integer }
