@@ -62,7 +62,7 @@ const episodeRules = [
  * /episodes:
  *   get:
  *     summary: List series / shows with filters & pagination
- *     description: Public requests return published series / shows only. Admin requests with a Bearer token may filter by status or omit status to include all statuses.
+ *     description: Public requests return published series / shows only. Admin requests with a Bearer token return non-archived content by default and may filter by status, including archived.
  *     tags: [Episodes]
  *     security:
  *       - bearerAuth: []

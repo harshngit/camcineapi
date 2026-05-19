@@ -16,6 +16,7 @@ const buildWhere = (filters) => {
   Object.entries(filters).forEach(([key, val]) => {
     if (val === undefined || val === null || val === '') return;
     if (key === 'status')   { conditions.push(`status = $${idx++}`);         params.push(val); }
+    if (key === 'exclude_archived' && val) { conditions.push(`status != 'archived'`); }
     if (key === 'language') { conditions.push(`language ILIKE $${idx++}`);   params.push(val); }
     if (key === 'region')   { conditions.push(`region ILIKE $${idx++}`);     params.push(val); }
     if (key === 'is_free')  { conditions.push(`is_free = $${idx++}`);        params.push(val === 'true' || val === true); }
@@ -49,7 +50,8 @@ const getAllMovies = async (req, res, next) => {
   } = req.query;
 
   const offset = (parseInt(page) - 1) * parseInt(limit);
-  const statusFilter = req.user?.role === 'admin' ? req.query.status : 'published';
+  const isAdmin = req.user?.role === 'admin';
+  const statusFilter = isAdmin ? req.query.status : 'published';
 
   const sortMap = {
     newest:     'c.created_at DESC',
@@ -62,7 +64,7 @@ const getAllMovies = async (req, res, next) => {
 
   try {
     const { where, params, nextIdx } = buildWhere({
-      status: statusFilter, language, region, genre, is_free, search, year, rating,
+      status: statusFilter, exclude_archived: isAdmin && !statusFilter, language, region, genre, is_free, search, year, rating,
     });
 
     const dataQuery = `

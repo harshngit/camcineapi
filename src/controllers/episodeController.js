@@ -25,13 +25,15 @@ const getAllSeries = async (req, res, next) => {
   } = req.query;
 
   const offset = (parseInt(page) - 1) * parseInt(limit);
-  const statusFilter = req.user?.role === 'admin' ? req.query.status : 'published';
+  const isAdmin = req.user?.role === 'admin';
+  const statusFilter = isAdmin ? req.query.status : 'published';
 
   const conditions = [`c.type IN ('show','short_film')`];
   const params = [];
   let idx = 1;
 
   if (statusFilter) { conditions.push(`c.status = $${idx++}`);           params.push(statusFilter); }
+  else if (isAdmin) { conditions.push(`c.status != 'archived'`); }
   if (language)     { conditions.push(`c.language ILIKE $${idx++}`);     params.push(language); }
   if (region)       { conditions.push(`c.region ILIKE $${idx++}`);       params.push(region); }
   if (is_free)      { conditions.push(`c.is_free = $${idx++}`);          params.push(is_free === 'true'); }
