@@ -44,6 +44,14 @@ const handleDbError = (err) => {
     };
   }
 
+  // PostgreSQL error code 23514 is for check_violation
+  if (err.code === '23514') {
+    return {
+      message: 'One or more fields contain values outside the allowed range.',
+      statusCode: 400
+    };
+  }
+
   // PostgreSQL error code 22P02 is for invalid_text_representation (e.g., invalid UUID or integer)
   if (err.code === '22P02') {
     return {

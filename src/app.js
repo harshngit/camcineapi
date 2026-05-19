@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const { handleDbError } = require('./utils/dbErrorHandler');
 
 // ── Route imports ─────────────────────────────────────────────
 const authRoutes         = require('./routes/authRoutes');
@@ -46,7 +47,12 @@ app.use((req, res) => res.status(404).json({ success: false, message: 'Route not
 // ── Global Error Handler ──────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({ success: false, message: 'Internal server error.' });
+  if (err.code) {
+    const { message, statusCode } = handleDbError(err);
+    return res.status(statusCode).json({ success: false, message, errors: [] });
+  }
+
+  return res.status(500).json({ success: false, message: 'Internal server error.' });
 });
 
 // ── Start Server ──────────────────────────────────────────────

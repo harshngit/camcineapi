@@ -5,6 +5,14 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- ── VIDEO VIEWS TABLE ─────────────────────────────────────────
 -- Tracks every video view by users
 CREATE TABLE IF NOT EXISTS video_views (
@@ -18,6 +26,7 @@ CREATE TABLE IF NOT EXISTS video_views (
     client_ip       TEXT,
     user_agent      TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id, content_id, idempotency_key)
 );
 
@@ -43,7 +52,8 @@ CREATE TABLE IF NOT EXISTS point_transactions (
     admin_id            UUID REFERENCES users(id) ON DELETE SET NULL,
     idempotency_key     TEXT,
     metadata            JSONB DEFAULT '{}'::jsonb,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_point_trans_user_id      ON point_transactions(user_id);
@@ -74,6 +84,7 @@ CREATE TABLE IF NOT EXISTS user_daily_views (
     view_count      INTEGER NOT NULL DEFAULT 0,
     points_earned   INTEGER NOT NULL DEFAULT 0,
     last_viewed_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, view_date)
 );
 

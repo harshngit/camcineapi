@@ -150,7 +150,7 @@ const uploadImage = async (req, res, next) => {
     // Auto-update content/episode/actor with new URL
     if (auto_update === 'true' && linked_to_id && linked_to_type) {
       const fieldMap = {
-        content: { poster: 'poster_url', thumbnail: 'poster_url', banner: 'poster_url' },
+        content: { poster: 'poster_url', thumbnail: 'thumbnail_url', banner: 'poster_url' },
         episode: { thumbnail: 'thumbnail_url', poster: 'thumbnail_url' },
         actor:   { headshot: 'headshot_url', cover: 'headshot_url' },
       };
@@ -196,6 +196,7 @@ const uploadVideo = async (req, res, next) => {
       video_purpose,       // 'main_video' | 'trailer' | 'song_video'
       auto_update,         // 'true' = auto-update DB field
     } = req.body;
+    const effectiveVideoPurpose = video_purpose || 'main_video';
 
     // Upload to GCS
     const { uniqueName, gcsPath, publicUrl } = await uploadToGCS({
@@ -203,7 +204,7 @@ const uploadVideo = async (req, res, next) => {
       originalName: req.file.originalname,
       mimeType:     req.file.mimetype,
       fileType:     'video',
-      folder:       `videos/${video_purpose || 'general'}`,
+      folder:       `videos/${effectiveVideoPurpose}`,
     });
 
     // Save upload record to DB
@@ -218,7 +219,7 @@ const uploadVideo = async (req, res, next) => {
       publicUrl,
       linkedToId:    linked_to_id,
       linkedToType:  linked_to_type,
-      metadata:      { video_purpose },
+      metadata:      { video_purpose: effectiveVideoPurpose },
     });
 
     // Auto-update content/episode with new URL
@@ -227,7 +228,7 @@ const uploadVideo = async (req, res, next) => {
         content: { main_video: 'video_url', trailer: 'trailer_url', song_video: 'video_url' },
         episode: { main_video: 'video_url' },
       };
-      const field = fieldMap[linked_to_type]?.[video_purpose];
+      const field = fieldMap[linked_to_type]?.[effectiveVideoPurpose];
 
       if (field) {
         if (linked_to_type === 'content') await updateContentUrl(linked_to_id, field, publicUrl);

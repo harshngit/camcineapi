@@ -24,7 +24,9 @@ CREATE TABLE IF NOT EXISTS content (
     status            VARCHAR(20) NOT NULL DEFAULT 'draft'
                           CHECK (status IN ('draft','processing','published','archived')),
     poster_url        TEXT,
+    thumbnail_url     TEXT,
     trailer_url       TEXT,
+    video_url         TEXT,
     stream_url_hls    TEXT,
     stream_url_dash   TEXT,
     duration_seconds  INTEGER CHECK (duration_seconds > 0),
@@ -59,6 +61,8 @@ CREATE TABLE IF NOT EXISTS episodes (
     stream_url_hls    TEXT,
     stream_url_dash   TEXT,
     thumbnail_url     TEXT,
+    video_url         TEXT,
+    aired_date        DATE,
     price_tvod        NUMERIC(8,2) DEFAULT 0.00 CHECK (price_tvod >= 0),
     is_free           BOOLEAN NOT NULL DEFAULT FALSE,
     status            VARCHAR(20) NOT NULL DEFAULT 'draft'
@@ -70,6 +74,7 @@ CREATE TABLE IF NOT EXISTS episodes (
 
 CREATE INDEX IF NOT EXISTS idx_episodes_content_id ON episodes(content_id);
 CREATE INDEX IF NOT EXISTS idx_episodes_status     ON episodes(status);
+CREATE INDEX IF NOT EXISTS idx_episodes_aired_date ON episodes(aired_date DESC);
 
 -- ── SONGS METADATA TABLE ──────────────────────────────────────
 -- Extended data only for content where type = 'song'
@@ -82,6 +87,7 @@ CREATE TABLE IF NOT EXISTS songs_metadata (
     lyrics_url   TEXT,
     audio_url_hq TEXT,
     audio_url_lq TEXT,
+    video_url    TEXT,
     artist_ids   JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
