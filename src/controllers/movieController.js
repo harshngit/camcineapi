@@ -168,7 +168,27 @@ const getMovieById = async (req, res, next) => {
     `, [req.params.id]);
 
     if (!result.rows.length) return sendError(res, 'Movie not found.', 404);
-    return sendSuccess(res, { movie: result.rows[0] });
+
+    const movie = result.rows[0];
+    const imagesResult = await pool.query(`
+      SELECT
+        id, file_name, original_name, file_type, mime_type,
+        file_size_bytes, public_url, status, metadata,
+        linked_to_id, linked_to_type, created_at, updated_at
+      FROM media_uploads
+      WHERE linked_to_id = $1
+        AND linked_to_type = 'content'
+        AND file_type = 'image'
+      ORDER BY created_at DESC
+    `, [req.params.id]);
+
+    movie.images = {
+      poster_url: movie.poster_url || null,
+      thumbnail_url: movie.thumbnail_url || null,
+      uploads: imagesResult.rows,
+    };
+
+    return sendSuccess(res, { movie });
   } catch (err) {
     next(err);
   }

@@ -101,7 +101,7 @@ router.get('/', optionalAuthenticate, getAllMovies);
  * @swagger
  * /movies/{id}:
  *   get:
- *     summary: Get single movie with video_url, trailer_url, thumbnail_url and full cast[]
+ *     summary: Get single movie with video_url, trailer_url, thumbnail_url, images and full cast[]
  *     tags: [Movies]
  *     security: []
  *     parameters:
@@ -120,6 +120,20 @@ router.get('/', optionalAuthenticate, getAllMovies);
  *                   country: "India"
  *                   poster_url: "https://..."
  *                   thumbnail_url: "https://..."
+ *                   images:
+ *                     poster_url: "https://..."
+ *                     thumbnail_url: "https://..."
+ *                     uploads:
+ *                       - id: "uuid"
+ *                         file_name: "dangal-poster.jpg"
+ *                         original_name: "poster.jpg"
+ *                         file_type: "image"
+ *                         mime_type: "image/jpeg"
+ *                         file_size_bytes: 245000
+ *                         public_url: "https://storage.googleapis.com/camcine-media/images/poster/dangal-poster.jpg"
+ *                         status: "completed"
+ *                         linked_to_id: "uuid"
+ *                         linked_to_type: "content"
  *                   trailer_url: "https://..."
  *                   video_url: "https://..."
  *                   stream_url_hls: "https://cdn.camcine.com/hls/dangal/master.m3u8"
