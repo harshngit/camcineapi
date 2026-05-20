@@ -182,11 +182,11 @@ router.get('/:id', [param('id').isUUID()], validate, getMovieById);
  *                 example: "U"
  *               poster_url:
  *                 type: string
- *                 description: "Direct URL — or upload separately via POST /movies/upload/thumbnail"
+ *                 description: "Poster image URL. For direct browser upload, use POST /movies/upload/direct-url with upload_type=poster and save returned public_url here."
  *                 example: "https://storage.googleapis.com/camcine-media/images/poster/dangal.jpg"
  *               thumbnail_url:
  *                 type: string
- *                 description: "Thumbnail / cover art URL — or upload via POST /movies/upload/thumbnail"
+ *                 description: "Thumbnail image URL. For direct browser upload, use POST /movies/upload/direct-url with upload_type=thumbnail and save returned public_url here."
  *                 example: "https://storage.googleapis.com/camcine-media/images/thumbnail/dangal.jpg"
  *               trailer_url:
  *                 type: string
@@ -426,8 +426,9 @@ router.delete('/:id', authenticate, authorize('admin'), [param('id').isUUID()], 
  *                 example: video/quicktime
  *               upload_type:
  *                 type: string
- *                 enum: [thumbnail, trailer, video]
- *                 example: trailer
+ *                 enum: [poster, thumbnail, trailer, video]
+ *                 description: "Use poster for poster_url, thumbnail for thumbnail_url, trailer for trailer_url, and video for video_url."
+ *                 example: poster
  *     responses:
  *       200:
  *         description: Direct resumable upload URL created.
@@ -438,10 +439,10 @@ router.delete('/:id', authenticate, authorize('admin'), [param('id').isUUID()], 
  *               message: Direct upload URL created.
  *               data:
  *                 upload_url: "https://storage.googleapis.com/upload/storage/v1/b/camcine-media/o?uploadType=resumable&upload_id=..."
- *                 public_url: "https://storage.googleapis.com/camcine-media/videos/trailer/uuid.mov"
- *                 file_name: "uuid.mov"
- *                 gcs_path: "videos/trailer/uuid.mov"
- *                 mime_type: "video/quicktime"
+ *                 public_url: "https://storage.googleapis.com/camcine-media/images/poster/uuid.jpg"
+ *                 file_name: "uuid.jpg"
+ *                 gcs_path: "images/poster/uuid.jpg"
+ *                 mime_type: "image/jpeg"
  *                 method: "PUT"
  *                 headers:
  *                   Content-Type: "video/quicktime"
@@ -459,7 +460,7 @@ router.post(
   [
     body('file_name').notEmpty().trim(),
     body('mime_type').optional({ checkFalsy: true }).trim(),
-    body('upload_type').isIn(['thumbnail', 'trailer', 'video']),
+    body('upload_type').isIn(['poster', 'thumbnail', 'trailer', 'video']),
   ],
   validate,
   createDirectUploadUrl
@@ -576,7 +577,7 @@ router.post(
  * @swagger
  * /movies/upload/thumbnail:
  *   post:
- *     summary: Upload movie poster / thumbnail image (admin only)
+ *     summary: Upload movie thumbnail image (admin only)
  *     tags: [Movies]
  *     security:
  *       - bearerAuth: []

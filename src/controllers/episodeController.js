@@ -20,7 +20,7 @@ const { sendSuccess, sendError } = require('../utils/response');
 const getAllSeries = async (req, res, next) => {
   const {
     page = 1, limit = 10,
-    language, region, genre, is_free, search, year, rating,
+    language, region, country, genre, is_free, search, year, rating,
     sort = 'newest',
   } = req.query;
 
@@ -36,6 +36,7 @@ const getAllSeries = async (req, res, next) => {
   else if (isAdmin) { conditions.push(`c.status != 'archived'`); }
   if (language)     { conditions.push(`c.language ILIKE $${idx++}`);     params.push(language); }
   if (region)       { conditions.push(`c.region ILIKE $${idx++}`);       params.push(region); }
+  if (country)      { conditions.push(`c.country ILIKE $${idx++}`);      params.push(country); }
   if (is_free)      { conditions.push(`c.is_free = $${idx++}`);          params.push(is_free === 'true'); }
   if (genre)        { conditions.push(`c.genre @> $${idx++}::jsonb`);    params.push(JSON.stringify([genre])); }
   if (search)       {
@@ -57,7 +58,7 @@ const getAllSeries = async (req, res, next) => {
     const dataQuery = `
       SELECT
         c.id, c.title AS series_name, c.type, c.description,
-        c.language, c.region, c.genre, c.director,
+        c.language, c.region, c.country, c.genre, c.director,
         c.release_year, c.rating, c.status,
         c.poster_url, c.trailer_url, c.thumbnail_url,
         c.is_free, c.price_tvod, c.tags, c.created_at, c.updated_at,
@@ -117,7 +118,7 @@ const getSeriesById = async (req, res, next) => {
     const seriesResult = await pool.query(`
       SELECT
         c.id, c.title AS series_name, c.type, c.description,
-        c.language, c.region, c.genre, c.director,
+        c.language, c.region, c.country, c.genre, c.director,
         c.release_year, c.rating, c.status,
         c.poster_url, c.trailer_url, c.thumbnail_url,
         c.is_free, c.price_tvod, c.tags, c.created_at, c.updated_at,
@@ -194,7 +195,7 @@ const createSeries = async (req, res, next) => {
   const {
     series_name,        // maps to content.title
     type = 'show',      // 'show' | 'short_film'
-    description, language, region,
+    description, language, region, country,
     genre, director, release_year, rating,
     poster_url, thumbnail_url, trailer_url,
     is_free, price_tvod, imdb_id, tags,
@@ -213,15 +214,15 @@ const createSeries = async (req, res, next) => {
     // Insert parent content (series)
     const contentResult = await client.query(`
       INSERT INTO content (
-        title, type, description, language, region,
+        title, type, description, language, region, country,
         genre, director, release_year, rating,
         poster_url, thumbnail_url, trailer_url,
         is_free, price_tvod, imdb_id, tags,
         status, created_by
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'draft',$17)
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,'draft',$18)
       RETURNING *
     `, [
-      series_name, type, description, language, region,
+      series_name, type, description, language, region, country,
       JSON.stringify(genre || []),
       director, release_year, rating,
       poster_url, thumbnail_url, trailer_url,
@@ -307,7 +308,7 @@ const createSeries = async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────
 const updateSeries = async (req, res, next) => {
   const allowedFields = [
-    'title', 'description', 'language', 'region',
+    'title', 'description', 'language', 'region', 'country',
     'genre', 'director', 'release_year', 'rating', 'status',
     'poster_url', 'thumbnail_url', 'trailer_url',
     'is_free', 'price_tvod', 'imdb_id', 'tags',

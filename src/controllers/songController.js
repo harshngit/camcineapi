@@ -13,7 +13,7 @@ const { uploadToGCS, saveUploadRecord } = require('../middleware/uploadMiddlewar
 const getAllSongs = async (req, res, next) => {
   const {
     page = 1, limit = 10,
-    language, region, genre, is_free, search,
+    language, region, country, genre, is_free, search,
     mood, album, festival,
     sort = 'newest',
   } = req.query;
@@ -30,6 +30,7 @@ const getAllSongs = async (req, res, next) => {
   else if (isAdmin) { conditions.push(`c.status != 'archived'`); }
   if (language)     { conditions.push(`c.language ILIKE $${idx++}`);    params.push(language); }
   if (region)       { conditions.push(`c.region ILIKE $${idx++}`);      params.push(region); }
+  if (country)      { conditions.push(`c.country ILIKE $${idx++}`);     params.push(country); }
   if (is_free)      { conditions.push(`c.is_free = $${idx++}`);         params.push(is_free === 'true'); }
   if (genre)        { conditions.push(`c.genre @> $${idx++}::jsonb`);   params.push(JSON.stringify([genre])); }
   if (search) {
@@ -50,7 +51,7 @@ const getAllSongs = async (req, res, next) => {
   try {
     const dataQuery = `
       SELECT
-        c.id, c.title AS song_name, c.description, c.language, c.region,
+        c.id, c.title AS song_name, c.description, c.language, c.region, c.country,
         c.genre, c.director, c.release_year, c.rating, c.status,
         c.poster_url, c.thumbnail_url,
         c.stream_url_hls, c.stream_url_dash,
@@ -118,7 +119,7 @@ const getSongById = async (req, res, next) => {
   try {
     const result = await pool.query(`
       SELECT
-        c.id, c.title AS song_name, c.description, c.language, c.region,
+        c.id, c.title AS song_name, c.description, c.language, c.region, c.country,
         c.genre, c.director, c.release_year, c.rating, c.status,
         c.poster_url, c.thumbnail_url,
         c.stream_url_hls, c.stream_url_dash,
@@ -168,6 +169,7 @@ const createSong = async (req, res, next) => {
     description,
     language,
     region,
+    country,
     genre,
     director,           // music director / composer
     release_year,
@@ -212,17 +214,17 @@ const createSong = async (req, res, next) => {
     // Insert into content table
     const contentResult = await client.query(`
       INSERT INTO content (
-        title, type, description, language, region,
+        title, type, description, language, region, country,
         genre, director, release_year, rating,
         poster_url, thumbnail_url,
         stream_url_hls, stream_url_dash,
         duration_seconds, is_free, price_tvod,
         imdb_id, tags,
         status, created_by
-      ) VALUES ($1,'song',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,'draft',$18)
+      ) VALUES ($1,'song',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,'draft',$19)
       RETURNING *
     `, [
-      song_name, description, language, region,
+      song_name, description, language, region, country,
       JSON.stringify(genre || []),
       director, release_year, rating,
       poster_url || null,
@@ -317,7 +319,7 @@ const createSong = async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────
 const updateSong = async (req, res, next) => {
   const contentFields = [
-    'title', 'description', 'language', 'region', 'genre',
+    'title', 'description', 'language', 'region', 'country', 'genre',
     'director', 'release_year', 'rating', 'status',
     'poster_url', 'thumbnail_url',
     'stream_url_hls', 'stream_url_dash',

@@ -12,6 +12,11 @@ const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
 const DIRECT_UPLOAD_TYPES = {
+  poster: {
+    folder: 'images/poster',
+    extensions: ['.jpg', '.jpeg', '.png', '.webp'],
+    mimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+  },
   thumbnail: {
     folder: 'images/thumbnail',
     extensions: ['.jpg', '.jpeg', '.png', '.webp'],

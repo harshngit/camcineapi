@@ -30,6 +30,7 @@ const trailerUploader = createUploader('video');
 const seriesCreateRules = [
   body('series_name').notEmpty().trim().withMessage('series_name is required'),
   body('type').optional().isIn(['show', 'short_film']),
+  body('country').optional().isString().trim().isLength({ max: 100 }),
   body('rating').optional().isIn(['U', 'UA', 'A', 'S']),
   body('release_year').optional().isInt({ min: 1900, max: 2100 }),
   body('is_free').optional().isBoolean(),
@@ -73,6 +74,7 @@ const episodeRules = [
  *       - { in: query, name: status,   schema: { type: string, enum: [draft, processing, published, archived] }, description: "Admin only. Public requests are always limited to published content." }
  *       - { in: query, name: language, schema: { type: string } }
  *       - { in: query, name: region,   schema: { type: string } }
+ *       - { in: query, name: country,  schema: { type: string }, example: India }
  *       - { in: query, name: genre,    schema: { type: string } }
  *       - { in: query, name: is_free,  schema: { type: boolean } }
  *       - { in: query, name: search,   schema: { type: string } }
@@ -90,6 +92,7 @@ const episodeRules = [
  *                 series:
  *                   - id: "uuid"
  *                     series_name: "Mirzapur"
+ *                     country: "India"
  *                     type: "show"
  *                     total_episodes: 18
  *                     cast:
@@ -121,6 +124,7 @@ router.get('/', optionalAuthenticate, getAllSeries);
  *                 series:
  *                   id: "uuid"
  *                   series_name: "Mirzapur"
+ *                   country: "India"
  *                   poster_url: "https://..."
  *                   trailer_url: "https://..."
  *                   cast:
@@ -173,6 +177,9 @@ router.get('/:seriesId', [param('seriesId').isUUID()], validate, getSeriesById);
  *               region:
  *                 type: string
  *                 example: "UP"
+ *               country:
+ *                 type: string
+ *                 example: "India"
  *               genre:
  *                 type: array
  *                 items: { type: string }
@@ -186,11 +193,11 @@ router.get('/:seriesId', [param('seriesId').isUUID()], validate, getSeriesById);
  *                 enum: [U, UA, A, S]
  *               poster_url:
  *                 type: string
- *                 description: "Direct URL — or upload via POST /episodes/upload/thumbnail"
+ *                 description: "Series poster URL. For direct browser upload, use POST /episodes/upload/direct-url with upload_type=poster and save returned public_url here."
  *                 example: "https://storage.googleapis.com/camcine-media/images/poster/mirzapur.jpg"
  *               thumbnail_url:
  *                 type: string
- *                 description: "Thumbnail URL — or upload via POST /episodes/upload/thumbnail"
+ *                 description: "Series thumbnail URL. For direct browser upload, use POST /episodes/upload/direct-url with upload_type=thumbnail and save returned public_url here."
  *               trailer_url:
  *                 type: string
  *                 description: "Trailer URL — or upload via POST /episodes/upload/trailer"
@@ -236,6 +243,7 @@ router.get('/:seriesId', [param('seriesId').isUUID()], validate, getSeriesById);
  *           example:
  *             series_name: "Mirzapur"
  *             language: "Hindi"
+ *             country: "India"
  *             genre: ["Crime", "Thriller"]
  *             rating: "A"
  *             poster_url: "https://storage.googleapis.com/camcine-media/images/poster/mirzapur.jpg"
@@ -287,6 +295,7 @@ router.post('/', authenticate, authorize('admin'), seriesCreateRules, validate, 
  *               description:   { type: string }
  *               language:      { type: string }
  *               region:        { type: string }
+ *               country:       { type: string }
  *               genre:         { type: array, items: { type: string } }
  *               director:      { type: string }
  *               release_year:  { type: integer }
@@ -373,8 +382,9 @@ router.delete('/:seriesId', authenticate, authorize('admin'), [param('seriesId')
  *                 example: video/mp4
  *               upload_type:
  *                 type: string
- *                 enum: [thumbnail, trailer, video]
- *                 example: video
+ *                 enum: [poster, thumbnail, trailer, video]
+ *                 description: "Use poster for series poster_url, thumbnail for series or episode thumbnail_url, trailer for series trailer_url, and video for episode video_url."
+ *                 example: poster
  *     responses:
  *       200:
  *         description: Direct resumable upload URL created.
@@ -385,10 +395,10 @@ router.delete('/:seriesId', authenticate, authorize('admin'), [param('seriesId')
  *               message: Direct upload URL created.
  *               data:
  *                 upload_url: "https://storage.googleapis.com/upload/storage/v1/b/camcine-media/o?uploadType=resumable&upload_id=..."
- *                 public_url: "https://storage.googleapis.com/camcine-media/videos/main_video/uuid.mp4"
- *                 file_name: "uuid.mp4"
- *                 gcs_path: "videos/main_video/uuid.mp4"
- *                 mime_type: "video/mp4"
+ *                 public_url: "https://storage.googleapis.com/camcine-media/images/poster/uuid.jpg"
+ *                 file_name: "uuid.jpg"
+ *                 gcs_path: "images/poster/uuid.jpg"
+ *                 mime_type: "image/jpeg"
  *                 method: "PUT"
  *                 headers:
  *                   Content-Type: "video/mp4"
@@ -406,7 +416,7 @@ router.post(
   [
     body('file_name').notEmpty().trim(),
     body('mime_type').optional({ checkFalsy: true }).trim(),
-    body('upload_type').isIn(['thumbnail', 'trailer', 'video']),
+    body('upload_type').isIn(['poster', 'thumbnail', 'trailer', 'video']),
   ],
   validate,
   createDirectUploadUrl
@@ -632,7 +642,7 @@ router.post(
  * @swagger
  * /episodes/upload/thumbnail:
  *   post:
- *     summary: Upload series poster / thumbnail (admin only)
+ *     summary: Upload series thumbnail image (admin only)
  *     tags: [Episodes]
  *     security:
  *       - bearerAuth: []

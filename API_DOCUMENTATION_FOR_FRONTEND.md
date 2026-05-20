@@ -1032,7 +1032,8 @@ Movies:
 
 | Endpoint | `upload_type` | Allowed extensions | Save URL to |
 |---|---|---|---|
-| `/movies/upload/direct-url` | `thumbnail` | `.jpg`, `.jpeg`, `.png`, `.webp` | `poster_url` and/or `thumbnail_url` |
+| `/movies/upload/direct-url` | `poster` | `.jpg`, `.jpeg`, `.png`, `.webp` | `poster_url` |
+| `/movies/upload/direct-url` | `thumbnail` | `.jpg`, `.jpeg`, `.png`, `.webp` | `thumbnail_url` |
 | `/movies/upload/direct-url` | `trailer` | `.mp4`, `.mov`, `.webm` | `trailer_url` |
 | `/movies/upload/direct-url` | `video` | `.mp4`, `.avi`, `.mov`, `.mkv`, `.webm` | `video_url` |
 
@@ -1040,7 +1041,8 @@ Series/episodes:
 
 | Endpoint | `upload_type` | Allowed extensions | Save URL to |
 |---|---|---|---|
-| `/episodes/upload/direct-url` | `thumbnail` | `.jpg`, `.jpeg`, `.png`, `.webp` | series `poster_url`/`thumbnail_url` or episode `thumbnail_url` |
+| `/episodes/upload/direct-url` | `poster` | `.jpg`, `.jpeg`, `.png`, `.webp` | series `poster_url` |
+| `/episodes/upload/direct-url` | `thumbnail` | `.jpg`, `.jpeg`, `.png`, `.webp` | series `thumbnail_url` or episode `thumbnail_url` |
 | `/episodes/upload/direct-url` | `trailer` | `.mp4`, `.mov`, `.webm` | series `trailer_url` |
 | `/episodes/upload/direct-url` | `video` | `.mp4`, `.avi`, `.mov`, `.mkv`, `.webm` | episode `video_url` |
 
@@ -1048,7 +1050,8 @@ Songs:
 
 | Endpoint | `upload_type` | Allowed extensions | Save URL to |
 |---|---|---|---|
-| `/songs/upload/direct-url` | `thumbnail` | `.jpg`, `.jpeg`, `.png`, `.webp` | `poster_url` and/or `thumbnail_url` |
+| `/songs/upload/direct-url` | `poster` | `.jpg`, `.jpeg`, `.png`, `.webp` | `poster_url` |
+| `/songs/upload/direct-url` | `thumbnail` | `.jpg`, `.jpeg`, `.png`, `.webp` | `thumbnail_url` |
 | `/songs/upload/direct-url` | `audio` | `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, `.ogg` | `audio_url_hq` |
 | `/songs/upload/direct-url` | `audio_lq` | `.mp3`, `.m4a`, `.aac`, `.wav`, `.flac`, `.ogg` | `audio_url_lq` |
 | `/songs/upload/direct-url` | `lyrics` | `.lrc`, `.vtt`, `.txt`, `.srt` | `lyrics_url` |

@@ -36,6 +36,7 @@ const lyricsUploader = multer({
 
 const songCreateRules = [
   body('song_name').notEmpty().trim().withMessage('song_name is required'),
+  body('country').optional().isString().trim().isLength({ max: 100 }),
   body('rating').optional().isIn(['U', 'UA', 'A', 'S']),
   body('release_year').optional().isInt({ min: 1900, max: 2100 }),
   body('price_tvod').optional().isFloat({ min: 0 }),
@@ -74,6 +75,8 @@ const songCreateRules = [
  *       - { in: query, name: limit,    schema: { type: integer, default: 10 } }
  *       - { in: query, name: status,   schema: { type: string, enum: [draft, processing, published, archived] }, description: "Admin only. Public requests are always limited to published content." }
  *       - { in: query, name: language, schema: { type: string } }
+ *       - { in: query, name: region,   schema: { type: string } }
+ *       - { in: query, name: country,  schema: { type: string }, example: India }
  *       - { in: query, name: genre,    schema: { type: string } }
  *       - { in: query, name: is_free,  schema: { type: boolean } }
  *       - { in: query, name: search,   schema: { type: string } }
@@ -92,6 +95,7 @@ const songCreateRules = [
  *                 songs:
  *                   - id: "uuid"
  *                     song_name: "Kesariya"
+ *                     country: "India"
  *                     audio_url_hq: "https://storage.googleapis.com/camcine-media/audio/hq/kesariya.aac"
  *                     audio_url_lq: "https://storage.googleapis.com/camcine-media/audio/lq/kesariya.mp3"
  *                     lyrics_url: "https://storage.googleapis.com/camcine-media/lyrics/kesariya.lrc"
@@ -131,6 +135,7 @@ router.get('/', optionalAuthenticate, getAllSongs);
  *                   song_name: "Kesariya"
  *                   description: "Romantic Sufi song from Brahmastra"
  *                   language: "Hindi"
+ *                   country: "India"
  *                   genre: ["Romantic", "Sufi"]
  *                   director: "Pritam"
  *                   release_year: 2022
@@ -190,6 +195,9 @@ router.get('/:id', [param('id').isUUID()], validate, getSongById);
  *               region:
  *                 type: string
  *                 example: "Pan-India"
+ *               country:
+ *                 type: string
+ *                 example: "India"
  *               genre:
  *                 type: array
  *                 items: { type: string }
@@ -223,11 +231,11 @@ router.get('/:id', [param('id').isUUID()], validate, getSongById);
  *                 example: ["hit", "chartbuster"]
  *               poster_url:
  *                 type: string
- *                 description: "Song poster URL — or upload via POST /songs/upload/thumbnail"
+ *                 description: "Song poster URL. For direct browser upload, use POST /songs/upload/direct-url with upload_type=poster and save returned public_url here."
  *                 example: "https://storage.googleapis.com/camcine-media/images/poster/kesariya.jpg"
  *               thumbnail_url:
  *                 type: string
- *                 description: "Cover art / thumbnail URL — or upload via POST /songs/upload/thumbnail"
+ *                 description: "Song thumbnail URL. For direct browser upload, use POST /songs/upload/direct-url with upload_type=thumbnail and save returned public_url here."
  *                 example: "https://storage.googleapis.com/camcine-media/images/thumbnail/kesariya.jpg"
  *               stream_url_hls:
  *                 type: string
@@ -289,6 +297,7 @@ router.get('/:id', [param('id').isUUID()], validate, getSongById);
  *             song_name: "Kesariya"
  *             description: "Romantic Sufi song from Brahmastra"
  *             language: "Hindi"
+ *             country: "India"
  *             genre: ["Romantic", "Sufi"]
  *             director: "Pritam"
  *             release_year: 2022
@@ -347,6 +356,8 @@ router.post('/', authenticate, authorize('admin'), songCreateRules, validate, cr
  *               song_name:        { type: string }
  *               description:      { type: string }
  *               language:         { type: string }
+ *               region:           { type: string }
+ *               country:          { type: string }
  *               genre:            { type: array, items: { type: string } }
  *               director:         { type: string }
  *               release_year:     { type: integer }
@@ -416,7 +427,7 @@ router.delete('/:id', authenticate, authorize('admin'), [param('id').isUUID()], 
  *     description: >
  *       Use this for large browser uploads to avoid Cloud Run / proxy request body limits.
  *       Upload the file to the returned `upload_url` with `PUT`, then save `public_url`
- *       on the song payload as poster, thumbnail, audio, or lyrics URL.
+ *       on the song payload as poster_url, thumbnail_url, audio_url_hq, audio_url_lq, or lyrics_url.
  *     tags: [Songs]
  *     security:
  *       - bearerAuth: []
@@ -437,8 +448,9 @@ router.delete('/:id', authenticate, authorize('admin'), [param('id').isUUID()], 
  *                 example: audio/mpeg
  *               upload_type:
  *                 type: string
- *                 enum: [thumbnail, audio, audio_lq, lyrics]
- *                 example: audio
+ *                 enum: [poster, thumbnail, audio, audio_lq, lyrics]
+ *                 description: "Use poster for poster_url, thumbnail for thumbnail_url, audio for audio_url_hq, audio_lq for audio_url_lq, and lyrics for lyrics_url."
+ *                 example: poster
  *     responses:
  *       200:
  *         description: Direct resumable upload URL created.
@@ -449,10 +461,10 @@ router.delete('/:id', authenticate, authorize('admin'), [param('id').isUUID()], 
  *               message: Direct upload URL created.
  *               data:
  *                 upload_url: "https://storage.googleapis.com/upload/storage/v1/b/camcine-media/o?uploadType=resumable&upload_id=..."
- *                 public_url: "https://storage.googleapis.com/camcine-media/audio/hq/uuid.mp3"
- *                 file_name: "uuid.mp3"
- *                 gcs_path: "audio/hq/uuid.mp3"
- *                 mime_type: "audio/mpeg"
+ *                 public_url: "https://storage.googleapis.com/camcine-media/images/poster/uuid.jpg"
+ *                 file_name: "uuid.jpg"
+ *                 gcs_path: "images/poster/uuid.jpg"
+ *                 mime_type: "image/jpeg"
  *                 method: "PUT"
  *                 headers:
  *                   Content-Type: "audio/mpeg"
@@ -470,7 +482,7 @@ router.post(
   [
     body('file_name').notEmpty().trim(),
     body('mime_type').optional({ checkFalsy: true }).trim(),
-    body('upload_type').isIn(['thumbnail', 'audio', 'audio_lq', 'lyrics']),
+    body('upload_type').isIn(['poster', 'thumbnail', 'audio', 'audio_lq', 'lyrics']),
   ],
   validate,
   createDirectUploadUrl

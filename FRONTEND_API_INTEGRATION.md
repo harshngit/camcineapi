@@ -352,7 +352,7 @@ Body:
 }
 ```
 
-Allowed `upload_type` values: `thumbnail`, `trailer`, `video`.
+Allowed `upload_type` values: `poster`, `thumbnail`, `trailer`, `video`.
 
 Response data:
 
@@ -377,7 +377,8 @@ After upload completes, save `public_url` on the movie create/update payload:
 
 | Upload type | Movie field |
 |---|---|
-| `thumbnail` | `poster_url` and/or `thumbnail_url` |
+| `poster` | `poster_url` |
+| `thumbnail` | `thumbnail_url` |
 | `trailer` | `trailer_url` |
 | `video` | `video_url` |
 
@@ -396,7 +397,7 @@ Fields:
 
 Response data includes `public_url`.
 
-Backend currently maps thumbnail upload to `poster_url` in `uploadController`. Frontend can use returned `public_url` as both `poster_url` and `thumbnail_url` if needed.
+Multipart thumbnail upload auto-updates `thumbnail_url`. Use direct upload with `upload_type: "poster"` when saving a separate `poster_url`.
 
 #### Upload Movie Trailer
 
@@ -613,9 +614,9 @@ Body:
 }
 ```
 
-Allowed `upload_type` values: `thumbnail`, `trailer`, `video`.
+Allowed `upload_type` values: `poster`, `thumbnail`, `trailer`, `video`.
 
-Use the returned `upload_url` the same way as the movie direct upload flow. For series parent records, save `thumbnail` as `poster_url` / `thumbnail_url` and `trailer` as `trailer_url`. For episode video files, save the returned URL as the episode `video_url`.
+Use the returned `upload_url` the same way as the movie direct upload flow. For series parent records, save `poster` as `poster_url`, `thumbnail` as `thumbnail_url`, and `trailer` as `trailer_url`. For episode video files, save the returned URL as the episode `video_url`.
 
 #### Upload Series Trailer
 
@@ -827,9 +828,9 @@ Body:
 }
 ```
 
-Allowed `upload_type` values: `thumbnail`, `audio`, `audio_lq`, `lyrics`.
+Allowed `upload_type` values: `poster`, `thumbnail`, `audio`, `audio_lq`, `lyrics`.
 
-Use the returned `upload_url` the same way as the movie direct upload flow. Save returned `public_url` into `poster_url` / `thumbnail_url`, `audio_url_hq`, `audio_url_lq`, or `lyrics_url` depending on the upload purpose. Use `audio` for HQ audio and `audio_lq` for LQ audio.
+Use the returned `upload_url` the same way as the movie direct upload flow. Save returned `public_url` into `poster_url`, `thumbnail_url`, `audio_url_hq`, `audio_url_lq`, or `lyrics_url` depending on the upload purpose. Use `poster` for poster images, `thumbnail` for thumbnail images, `audio` for HQ audio, and `audio_lq` for LQ audio.
 
 #### Upload Song Audio
 
