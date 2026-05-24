@@ -12,6 +12,19 @@ const movieRoutes        = require('./routes/movieRoutes');
 const episodeRoutes      = require('./routes/episodeRoutes');
 const songRoutes         = require('./routes/songRoutes');
 const viewTrackingRoutes = require('./routes/viewTrackingRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const paymentRoutes      = require('./routes/paymentRoutes');
+const analyticsRoutes    = require('./routes/analyticsRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const ratingRoutes       = require('./routes/ratingRoutes');
+const searchRoutes       = require('./routes/searchRoutes');
+const actorRoutes        = require('./routes/actorRoutes');
+const newsRoutes         = require('./routes/newsRoutes');
+const contentRoutes      = require('./routes/contentRoutes');
+const settingsRoutes     = require('./routes/settingsRoutes');
+const managerRoutes      = require('./routes/managerRoutes');
+const supportRoutes      = require('./routes/supportRoutes');
+const activityRoutes     = require('./routes/activityRoutes');
 
 const app = express();
 
@@ -34,6 +47,19 @@ app.use('/api/v1/movies',   movieRoutes);
 app.use('/api/v1/episodes', episodeRoutes);
 app.use('/api/v1/songs',    songRoutes);
 app.use('/api/v1/views',    viewTrackingRoutes);
+app.use('/api/v1/subscriptions', subscriptionRoutes);
+app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/content', ratingRoutes);
+app.use('/api/v1/content', contentRoutes);
+app.use('/api/v1/search', searchRoutes);
+app.use('/api/v1/actors', actorRoutes);
+app.use('/api/v1/news', newsRoutes);
+app.use('/api/v1/settings', settingsRoutes);
+app.use('/api/v1/managers', managerRoutes);
+app.use('/api/v1/support', supportRoutes);
+app.use('/api/v1/activity-log', activityRoutes);
 
 // ── Health Check ──────────────────────────────────────────────
 // Cloud Run hits GET / to confirm the container started.

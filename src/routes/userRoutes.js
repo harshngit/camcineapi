@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const { body, param } = require('express-validator');
 const { getAllUsers, getUserById, updateUser, deleteUser } = require('../controllers/userController');
+const watchController = require('../controllers/watchController');
+const recommendationController = require('../controllers/recommendationController');
 const { authenticate, authorize } = require('../middleware/auth');
 const validate = require('../middleware/validate');
 
@@ -65,6 +67,48 @@ router.get('/:id',
   [param('id').isUUID()],
   validate,
   getUserById
+);
+
+router.get('/:userId/watchlist',
+  authenticate,
+  [param('userId').isUUID()],
+  validate,
+  watchController.getWatchlist
+);
+
+router.post('/:userId/watchlist',
+  authenticate,
+  [param('userId').isUUID(), body('content_id').isUUID()],
+  validate,
+  watchController.addWatchlist
+);
+
+router.delete('/:userId/watchlist/:contentId',
+  authenticate,
+  [param('userId').isUUID(), param('contentId').isUUID()],
+  validate,
+  watchController.removeWatchlist
+);
+
+router.get('/:userId/continue-watching',
+  authenticate,
+  [param('userId').isUUID()],
+  validate,
+  watchController.getContinueWatching
+);
+
+router.post('/:userId/progress',
+  authenticate,
+  [param('userId').isUUID(), body('content_id').isUUID(), body('progress_seconds').isInt({ min: 0 })],
+  validate,
+  watchController.saveProgress
+);
+
+router.get('/:userId/recommendations',
+  authenticate,
+  [param('userId').isUUID()],
+  validate,
+  recommendationController.personalized
 );
 
 /**
