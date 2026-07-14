@@ -4,11 +4,19 @@ const path = require('path');
 
 async function initDb() {
   const schemas = [
-    '../../db/schema.sql',
-    '../../db/content_schema.sql',
-    '../../db/actor_schema.sql',
-    '../../db/storage_cast_schema.sql',
-    '../../db/view_tracking_schema.sql'
+    '../../db/01_schema.sql',
+    '../../db/02_content_schema.sql',
+    '../../db/03_actor_schema.sql',
+    '../../db/04_storage_cast_schema.sql',
+    '../../db/05_view_tracking_schema.sql',
+    '../../db/06_add_cast_image.sql',
+    '../../db/07_add_view_tracking_points.sql',
+    '../../db/08_add_song_video_url.sql',
+    '../../db/09_add_video_thumbnail_aireddate.sql',
+    '../../db/10_camcine_new_columns.sql',
+    '../../db/11_add_country_to_content.sql',
+    '../../db/12_fix_api_runtime_schema.sql',
+    '../../db/13_create_news_articles.sql'
   ];
 
   try {
